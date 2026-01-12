@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
 import ProductInfo from './components/ProductInfo'
 import ConditionSelector from './components/ConditionSelector'
-import BarcodeScannerV2 from './components/BarcodeScannerV2'
 import './App.css'
 
 function App() {
   const [scannedProduct, setScannedProduct] = useState(null)
   const [barcode, setBarcode] = useState('')
-  const [showScanner, setShowScanner] = useState(false)
   const [userConditions, setUserConditions] = useState(() => {
     const saved = localStorage.getItem('lulaLensConditions')
     return saved ? JSON.parse(saved) : []
@@ -17,27 +15,17 @@ function App() {
     localStorage.setItem('lulaLensConditions', JSON.stringify(userConditions))
   }, [userConditions])
 
-  const handleScanSuccess = (barcodeValue) => {
-    setScannedProduct({ barcode: barcodeValue })
-    setBarcode('')
-    setShowScanner(false)
-  }
-
   const handleSubmit = (e) => {
     e.preventDefault()
     if (barcode.trim()) {
-      handleScanSuccess(barcode.trim())
+      setScannedProduct({ barcode: barcode.trim() })
+      setBarcode('')
     }
   }
 
   const handleScanAgain = () => {
     setScannedProduct(null)
     setBarcode('')
-    setShowScanner(false)
-  }
-
-  const handleCancelScanner = () => {
-    setShowScanner(false)
   }
 
   return (
@@ -52,40 +40,38 @@ function App() {
       </header>
 
       <main className="app-main">
-        {!scannedProduct && !showScanner && (
+        {!scannedProduct && (
           <div className="welcome">
-            <h2>Scan Product Barcode</h2>
+            <h2>Enter Product Barcode</h2>
             <p>Identify seed oils, preservatives, and problematic additives</p>
-            
-            <button onClick={() => setShowScanner(true)} className="camera-scan-button">
-              📷 Scan Barcode with Camera
-            </button>
-
-            <div className="divider">
-              <span>OR</span>
-            </div>
             
             <form onSubmit={handleSubmit} className="barcode-form">
               <input
                 type="text"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
-                placeholder="Enter barcode manually (e.g., 737628064502)"
+                placeholder="Enter barcode (e.g., 737628064502)"
                 className="barcode-input-main"
+                autoFocus
                 inputMode="numeric"
               />
               <button type="submit" className="scan-button">
-                Analyze Product
+                🔍 Analyze Product
               </button>
             </form>
-          </div>
-        )}
 
-        {!scannedProduct && showScanner && (
-          <BarcodeScannerV2 
-            onScanSuccess={handleScanSuccess}
-            onCancel={handleCancelScanner}
-          />
+            <div style={{ 
+              textAlign: 'center', 
+              marginTop: '20px',
+              color: '#666',
+              fontSize: '14px',
+              maxWidth: '400px',
+              margin: '20px auto'
+            }}>
+              <p>💡 Find the barcode on product packaging</p>
+              <p>Usually 8-13 digits under the barcode lines</p>
+            </div>
+          </div>
         )}
 
         {scannedProduct && (
