@@ -317,3 +317,128 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Positive findings section */
+.positive-findings {
+  background: linear-gradient(135deg, #2d5016 0%, #3a6b1f 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  border-left: 5px solid #4CAF50;
+}
+
+.positive-findings h3 {
+  color: #a8e890;
+  margin-bottom: 1rem;
+}
+
+.positive-findings ul {
+  list-style: none;
+  padding: 0;
+}
+
+.positive-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.positive-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.positive-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.positive-benefit {
+  font-size: 0.9rem;
+  color: #90EE90;
+  font-style: italic;
+}
+
+/* Severity badges */
+.severity-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+
+.severity-badge.critical {
+  background-color: #ff1744;
+  color: white;
+}
+
+.severity-badge.high {
+  background-color: #ff9800;
+  color: white;
+}
+
+/* Enhanced warning source */
+.warning-source {
+  display: block;
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+/* Nutrient reason */
+.nutrient-reason {
+  display: block;
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: 0.25rem;
+}
+
+/* Sources section */
+.sources-section {
+  background-color: rgba(102, 126, 234, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-top: 2rem;
+  border-left: 4px solid #667eea;
+}
+
+.sources-section h3 {
+  color: #a5b4fc;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.sources-list {
+  list-style: none;
+  padding: 0;
+}
+
+.sources-list li {
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sources-list li:last-child {
+  border-bottom: none;
+}
+
+/* Critical severity styling */
+.warning-critical {
+  background: linear-gradient(135deg, #5c0a0a 0%, #8b0000 100%) !important;
+  border-left-color: #ff1744 !important;
+}
+
+/* High severity styling */
+.warning-high {
+  background: linear-gradient(135deg, #5c3500 0%, #8b4513 100%) !important;
+  border-left-color: #ff9800 !important;
+}

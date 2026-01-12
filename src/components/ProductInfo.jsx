@@ -88,6 +88,24 @@ function ProductInfo({ product, onScanAgain, userConditions = [] }) {
         </div>
       )}
 
+      {/* Positive Findings - Show what's GOOD */}
+      {analysis && analysis.positiveFindings && analysis.positiveFindings.length > 0 && (
+        <div className="positive-findings">
+          <h3>✅ Good News!</h3>
+          <ul>
+            {analysis.positiveFindings.map((finding, index) => (
+              <li key={index} className="positive-item">
+                <span className="positive-icon">{finding.icon}</span>
+                <div className="positive-content">
+                  <strong>{finding.ingredient}</strong>
+                  <span className="positive-benefit">{finding.benefit}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {analysis && analysis.warnings.length > 0 && (
         <div className="warnings">
           <h3>⚠️ Ingredient Warnings</h3>
@@ -98,6 +116,15 @@ function ProductInfo({ product, onScanAgain, userConditions = [] }) {
                 <div className="warning-content">
                   <strong>{warning.ingredient}</strong>
                   <span className="warning-reason">{warning.reason}</span>
+                  {warning.source && (
+                    <span className="warning-source">Source: {warning.source}</span>
+                  )}
+                  {warning.severity === 'critical' && (
+                    <span className="severity-badge critical">⛔ AVOID COMPLETELY</span>
+                  )}
+                  {warning.severity === 'high' && (
+                    <span className="severity-badge high">🚨 LIMIT STRICTLY</span>
+                  )}
                 </div>
               </li>
             ))}
@@ -114,7 +141,10 @@ function ProductInfo({ product, onScanAgain, userConditions = [] }) {
                 <span className="warning-icon">{warning.icon}</span>
                 <div className="nutrient-content">
                   <strong>{warning.nutrient}:</strong> {warning.value.toFixed(1)}{warning.unit}
-                  <span className="nutrient-limit">(Limit: {warning.limit}{warning.unit} for {warning.condition})</span>
+                  <span className="nutrient-limit">(Limit: {warning.limit}{warning.unit})</span>
+                  {warning.reason && (
+                    <span className="nutrient-reason">{warning.reason}</span>
+                  )}
                 </div>
               </li>
             ))}
@@ -128,6 +158,18 @@ function ProductInfo({ product, onScanAgain, userConditions = [] }) {
           <ul>
             {analysis.recommendations.map((rec, index) => (
               <li key={index}>{rec}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Evidence-based Sources */}
+      {analysis && analysis.sources && analysis.sources.length > 0 && (
+        <div className="sources-section">
+          <h3>📚 Evidence-Based Sources</h3>
+          <ul className="sources-list">
+            {analysis.sources.map((source, index) => (
+              <li key={index}>{source}</li>
             ))}
           </ul>
         </div>

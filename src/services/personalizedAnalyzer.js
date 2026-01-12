@@ -1,10 +1,10 @@
-import { HEALTH_CONDITIONS } from '../data/healthConditions'
+import { HEALTH_CONDITIONS, SEVERITY } from '../data/healthConditions'
 
 /**
- * Analyze product based on user's selected health conditions
+ * Analyze product based on user's selected health conditions with severity levels
  * @param {Object} product - Product data from Open Food Facts
  * @param {Array<string>} userConditions - Array of condition IDs user has selected
- * @returns {Object} Personalized analysis with warnings and score
+ * @returns {Object} Personalized analysis with warnings, positive findings, and score
  */
 export function analyzeForConditions(product, userConditions = []) {
   if (!product.ingredients_text && !product.nutriments) {
@@ -13,17 +13,21 @@ export function analyzeForConditions(product, userConditions = []) {
       warnings: [{ 
         ingredient: 'Unknown', 
         reason: 'Product information not available', 
-        severity: 'medium',
-        condition: 'general'
+        severity: 'high',
+        condition: 'general',
+        source: 'N/A'
       }],
       recommendations: [],
-      nutrientWarnings: []
+      nutrientWarnings: [],
+      positiveFindings: []
     }
   }
 
   const warnings = []
   const nutrientWarnings = []
+  const positiveFindings = []
   const recommendations = new Set()
+  const sources = new Set()
   let score = 100
 
   // If no conditions selected, use general health
@@ -38,27 +42,56 @@ export function analyzeForConditions(product, userConditions = []) {
     const condition = HEALTH_CONDITIONS[conditionId]
     if (!condition) return
 
+    // Add sources
+    if (condition.sources) {
+      condition.sources.forEach(source => sources.add(source))
+    }
+
     // Add recommendations
     condition.recommendations.forEach(rec => recommendations.add(rec))
 
-    // Check for problematic ingredients
+    // Check for positive ingredients
+    if (condition.positiveIngredients) {
+      condition.positiveIngredients.forEach(positiveItem => {
+        const itemName = typeof positiveItem === 'string' ? positiveItem : positiveItem.name
+        if (ingredientsLower.includes(itemName.toLowerCase())) {
+          positiveFindings.push({
+            ingredient: itemName,
+            benefit: typeof positiveItem === 'object' ? positiveItem.benefit : 'Beneficial ingredient',
+            condition: condition.name,
+            icon: '✅'
+          })
+          // Bonus points for positive ingredients
+          score += 5
+        }
+      })
+    }
+
+    // Check for problematic ingredients with severity levels
     condition.avoidIngredients.forEach(ingredient => {
-      if (ingredientsLower.includes(ingredient.toLowerCase())) {
+      const ingredientData = typeof ingredient === 'string' 
+        ? { name: ingredient, severity: SEVERITY.MODERATE, reason: `Avoid with ${condition.name}`, source: condition.name }
+        : ingredient
+
+      if (ingredientsLower.includes(ingredientData.name.toLowerCase())) {
         warnings.push({
-          ingredient: ingredient.charAt(0).toUpperCase() + ingredient.slice(1),
-          reason: `Avoid with ${condition.name}`,
-          severity: conditionId === 'cancer' || conditionId === 'celiac' ? 'high' : 'medium',
+          ingredient: ingredientData.name.charAt(0).toUpperCase() + ingredientData.name.slice(1),
+          reason: ingredientData.reason,
+          severity: ingredientData.severity,
           condition: condition.name,
-          icon: condition.icon
+          icon: condition.icon,
+          source: ingredientData.source
         })
         
-        // Deduct points based on condition severity
-        const deduction = conditionId === 'cancer' || conditionId === 'celiac' ? 25 : 15
+        // Deduct points based on severity
+        const deduction = ingredientData.severity === SEVERITY.CRITICAL ? 30 
+                        : ingredientData.severity === SEVERITY.HIGH ? 20 
+                        : 10
         score -= deduction
       }
     })
 
-    // Check nutrient limits
+    // Check nutrient limits with reasons
     if (product.nutriments) {
       Object.entries(condition.nutrientLimits).forEach(([nutrient, limit]) => {
         const value = product.nutriments[nutrient]
@@ -68,6 +101,7 @@ export function analyzeForConditions(product, userConditions = []) {
             value: value,
             limit: limit.max,
             unit: limit.unit,
+            reason: limit.reason || `Exceeds recommended limit for ${condition.name}`,
             condition: condition.name,
             icon: condition.icon
           })
@@ -77,14 +111,20 @@ export function analyzeForConditions(product, userConditions = []) {
     }
   })
 
-  // Ensure score doesn't go below 0
-  score = Math.max(0, score)
+  // Ensure score doesn't go below 0 or above 100
+  score = Math.max(0, Math.min(100, score))
 
   return {
     score,
-    warnings: [...new Map(warnings.map(w => [w.ingredient, w])).values()], // Remove duplicates
+    warnings: warnings.sort((a, b) => {
+      // Sort by severity: critical > high > moderate
+      const severityOrder = { critical: 0, high: 1, moderate: 2 }
+      return (severityOrder[a.severity] || 3) - (severityOrder[b.severity] || 3)
+    }),
     nutrientWarnings,
-    recommendations: Array.from(recommendations)
+    positiveFindings,
+    recommendations: Array.from(recommendations),
+    sources: Array.from(sources)
   }
 }
 
