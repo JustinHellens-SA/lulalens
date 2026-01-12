@@ -20,6 +20,10 @@ function ProductInfo({ product, onScanAgain, userConditions = [] }) {
         
         if (data && data.product) {
           const ingredientAnalysis = analyzeForConditions(data.product, userConditions)
+          console.log('Analysis result:', ingredientAnalysis)
+          console.log('User conditions:', userConditions)
+          console.log('Warnings:', ingredientAnalysis.warnings)
+          console.log('Positive findings:', ingredientAnalysis.positiveFindings)
           setAnalysis(ingredientAnalysis)
         }
         

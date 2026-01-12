@@ -36,6 +36,29 @@ export function analyzeForConditions(product, userConditions = []) {
     : ['generalHealth']
 
   const ingredientsLower = product.ingredients_text?.toLowerCase() || ''
+  
+  // Debug logging
+  console.log('🔍 Analyzing product ingredients:', product.ingredients_text)
+  console.log('📋 User conditions:', conditions)
+  
+  // Helper function to check if an ingredient is present (more flexible matching)
+  const containsIngredient = (text, searchTerm) => {
+    const term = searchTerm.toLowerCase().trim()
+    const textLower = text.toLowerCase()
+    
+    // Direct match
+    if (textLower.includes(term)) return true
+    
+    // Try with word boundaries for more accurate matching
+    const wordBoundaryRegex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+    if (wordBoundaryRegex.test(text)) return true
+    
+    // Check for common variations (e.g., "palm oil" vs "palmoil")
+    const noSpacesTerm = term.replace(/\s+/g, '')
+    if (noSpacesTerm !== term && textLower.includes(noSpacesTerm)) return true
+    
+    return false
+  }
 
   // Check each selected condition
   conditions.forEach(conditionId => {
@@ -54,7 +77,7 @@ export function analyzeForConditions(product, userConditions = []) {
     if (condition.positiveIngredients) {
       condition.positiveIngredients.forEach(positiveItem => {
         const itemName = typeof positiveItem === 'string' ? positiveItem : positiveItem.name
-        if (ingredientsLower.includes(itemName.toLowerCase())) {
+        if (containsIngredient(ingredientsLower, itemName)) {
           positiveFindings.push({
             ingredient: itemName,
             benefit: typeof positiveItem === 'object' ? positiveItem.benefit : 'Beneficial ingredient',
@@ -73,7 +96,7 @@ export function analyzeForConditions(product, userConditions = []) {
         ? { name: ingredient, severity: SEVERITY.MODERATE, reason: `Avoid with ${condition.name}`, source: condition.name }
         : ingredient
 
-      if (ingredientsLower.includes(ingredientData.name.toLowerCase())) {
+      if (containsIngredient(ingredientsLower, ingredientData.name)) {
         warnings.push({
           ingredient: ingredientData.name.charAt(0).toUpperCase() + ingredientData.name.slice(1),
           reason: ingredientData.reason,
