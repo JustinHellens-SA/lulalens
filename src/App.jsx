@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import ProductInfo from './components/ProductInfo'
 import ConditionSelector from './components/ConditionSelector'
-import BarcodeScanner from './components/BarcodeScanner'
+import BarcodeScannerV2 from './components/BarcodeScannerV2'
 import './App.css'
 
 function App() {
@@ -81,7 +81,7 @@ function App() {
         )}
 
         {!scannedProduct && showScanner && (
-          <BarcodeScanner 
+          <BarcodeScannerV2 
             onScanSuccess={handleScanSuccess}
             onCancel={handleCancelScanner}
           />
