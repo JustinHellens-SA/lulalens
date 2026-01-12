@@ -6,11 +6,14 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
   const [error, setError] = useState(null)
   const [scanStatus, setScanStatus] = useState('Initializing...')
   const [manualBarcode, setManualBarcode] = useState('')
+  const [lastDetected, setLastDetected] = useState('')
   const scannerRef = useRef(null)
   const detectedRef = useRef(false)
+  const detectionCountRef = useRef({})
 
   useEffect(() => {
     detectedRef.current = false
+    detectionCountRef.current = {}
     
     const startScanner = () => {
       setScanStatus('🎥 Starting camera...')
@@ -31,16 +34,16 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
           patchSize: "medium",
           halfSample: true
         },
-        numOfWorkers: 2,
+        numOfWorkers: 4,
+        frequency: 10,
         decoder: {
           readers: [
             "ean_reader",
-            "ean_8_reader",
+            "ean_8_reader", 
             "upc_reader",
-            "upc_e_reader",
-            "code_128_reader",
-            "code_39_reader"
-          ]
+            "upc_e_reader"
+          ],
+          multiple: false
         },
         locate: true
       }, (err) => {
@@ -60,7 +63,7 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         }
         
         console.log('Quagga initialized successfully')
-        setScanStatus('🎯 Camera ready - point at barcode!')
+        setScanStatus('🎯 Camera ready - hold barcode steady!')
         Quagga.start()
       })
 
@@ -68,16 +71,38 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         if (detectedRef.current) return
         
         const code = result.codeResult.code
-        console.log('✅ Barcode detected:', code)
+        const quality = result.codeResult.quality || 0
         
-        detectedRef.current = true
-        setScanStatus(`✅ FOUND: ${code}`)
+        // Only accept high quality reads
+        if (quality < 75) {
+          console.log(`Low quality read (${quality.toFixed(0)}): ${code}`)
+          return
+        }
         
-        Quagga.stop()
+        // Count detections
+        if (!detectionCountRef.current[code]) {
+          detectionCountRef.current[code] = 0
+        }
+        detectionCountRef.current[code]++
         
-        setTimeout(() => {
-          onScanSuccess(code)
-        }, 800)
+        setLastDetected(code)
+        console.log(`Detected: ${code} (Quality: ${quality.toFixed(0)}, Count: ${detectionCountRef.current[code]})`)
+        
+        // Need 3 consistent high-quality reads before accepting
+        if (detectionCountRef.current[code] >= 3) {
+          console.log('✅ Barcode confirmed:', code)
+          
+          detectedRef.current = true
+          setScanStatus(`✅ FOUND: ${code}`)
+          
+          Quagga.stop()
+          
+          setTimeout(() => {
+            onScanSuccess(code)
+          }, 800)
+        } else {
+          setScanStatus(`📍 Reading... (${detectionCountRef.current[code]}/3)`)
+        }
       })
     }
 
@@ -86,6 +111,7 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
     return () => {
       Quagga.stop()
       detectedRef.current = false
+      detectionCountRef.current = {}
     }
   }, [onScanSuccess])
 
@@ -131,7 +157,7 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
 
       {scanStatus && (
         <div style={{
-          backgroundColor: scanStatus.includes('✅') ? '#4CAF50' : '#2196F3',
+          backgroundColor: scanStatus.includes('✅') ? '#4CAF50' : scanStatus.includes('📍') ? '#FF9800' : '#2196F3',
           color: 'white',
           padding: '20px',
           margin: '10px auto',
@@ -142,6 +168,17 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
           maxWidth: '640px'
         }}>
           {scanStatus}
+        </div>
+      )}
+
+      {lastDetected && !scanStatus.includes('✅') && (
+        <div style={{
+          color: '#666',
+          textAlign: 'center',
+          fontSize: '16px',
+          marginTop: '10px'
+        }}>
+          Last seen: {lastDetected}
         </div>
       )}
 
