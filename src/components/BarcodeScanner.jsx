@@ -8,6 +8,7 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
   const [debugInfo, setDebugInfo] = useState('')
   const [showManualEntry, setShowManualEntry] = useState(false)
   const [manualBarcode, setManualBarcode] = useState('')
+  const [scanStatus, setScanStatus] = useState('') // Visible scan status
   const scannerRef = useRef(null)
   const html5QrCodeRef = useRef(null)
   const isStartingRef = useRef(false)
@@ -65,6 +66,7 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
           { facingMode: "environment" },
           config,
           (decodedText) => {
+            setScanStatus(`✅ FOUND: ${decodedText}`)
             console.log('✅ Barcode detected:', decodedText)
             // Stop scanner immediately and pass the result
             if (html5QrCodeRef.current) {
@@ -72,15 +74,18 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
               html5QrCodeRef.current.stop()
                 .then(() => {
                   console.log('Scanner stopped, calling onScanSuccess')
-                  onScanSuccess(decodedText)
+                  setScanStatus('Processing...')
+                  setTimeout(() => onScanSuccess(decodedText), 100)
                 })
                 .catch(err => {
                   console.error('Error stopping scanner:', err)
                   // Call success anyway
-                  onScanSuccess(decodedText)
+                  setScanStatus('Processing...')
+                  setTimeout(() => onScanSuccess(decodedText), 100)
                 })
             } else {
-              onScanSuccess(decodedText)
+              setScanStatus('Processing...')
+              setTimeout(() => onScanSuccess(decodedText), 100)
             }
           },
           (errorMessage) => {
@@ -93,7 +98,8 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
         }
         
         console.log('Scanner started successfully')
-        setDebugInfo('Scanner ready - point at barcode')
+        setDebugInfo('🎯 Camera ready - scan any barcode now!')
+        setScanStatus('🎯 Point camera at barcode...')
         setIsInitializing(false)
         isStartingRef.current = false
       } catch (err) {
@@ -178,6 +184,21 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
       )}
 
       <div id="barcode-reader" ref={scannerRef}></div>
+
+      {scanStatus && (
+        <div style={{
+          backgroundColor: scanStatus.includes('✅') ? '#4CAF50' : '#2196F3',
+          color: 'white',
+          padding: '15px',
+          margin: '10px 0',
+          borderRadius: '8px',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          textAlign: 'center'
+        }}>
+          {scanStatus}
+        </div>
+      )}
 
       <div className="scanner-actions">
         <button onClick={handleCancel} className="cancel-button">

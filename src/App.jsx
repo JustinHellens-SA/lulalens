@@ -97,7 +97,7 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>Powered by Open Food Facts</p>
+        <p>Powered by Justin Hellens</p>
       </footer>
     </div>
   )
