@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import './BarcodeScanner.css'
 
 function BarcodeScanner({ onScanSuccess, onCancel }) {
   const [error, setError] = useState(null)
-  const [isInitializing, setIsInitializing] = useState(true)
-  const [debugInfo, setDebugInfo] = useState('')
-  const [showManualEntry, setShowManualEntry] = useState(false)
-  const [manualBarcode, setManualBarcode] = useState('')
+  const [status, setStatus] = useState('Initializing...')
+  const [isSupported, setIsSupported] = useState(true)
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  const detectorRef = useRef(null)
+  const scanningRef = useRef(true)
+  const detectedCodesRef = useRef({})
   const [scanStatus, setScanStatus] = useState('') // Visible scan status
   const scannerRef = useRef(null)
   const html5QrCodeRef = useRef(null)
@@ -15,224 +17,197 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
   const timeoutRef = useRef(null)
 
   useEffect(() => {
-    const startScanner = async () => {
-      if (isStartingRef.current) {
-        console.log('Scanner already starting...')
+    const initScanner = async () => {
+      // Check if Barcode Detection API is supported
+      if (!('BarcodeDetector' in window)) {
+        setIsSupported(false)
+        setError('Barcode scanner not supported on this browser. Please use Chrome or Edge.')
+        setStatus('')
         return
       }
 
       try {
-        isStartingRef.current = true
-        setIsInitializing(true)
-        setDebugInfo('Checking camera availability...')
-        console.log('Starting scanner initialization...')
-
-        // Check if mediaDevices is supported
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          throw new Error('Camera access not supported. Use manual entry below.')
-        }
-
-        setDebugInfo('Requesting camera access...')
-        console.log('Requesting camera permissions...')
-
-        // Set a timeout that will show manual entry
-        timeoutRef.current = setTimeout(() => {
-          console.error('Scanner initialization timeout - showing manual entry')
-          setIsInitializing(false)
-          setShowManualEntry(true)
-          setDebugInfo('Taking too long? Use manual entry below')
-        }, 5000) // Reduced to 5 seconds
-
-        const html5QrCode = new Html5Qrcode("barcode-reader")
-        html5QrCodeRef.current = html5QrCode
-
-        const config = {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          formatsToSupport: [
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.EAN_8,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.UPC_E,
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.CODE_39
-          ],
-          aspectRatio: 1.0
-        }
-
-        console.log('Starting html5-qrcode with config:', config)
+        setStatus('🎥 Starting camera...')
         
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          (decodedText) => {
-            setScanStatus(`✅ FOUND: ${decodedText}`)
-            console.log('✅ Barcode detected:', decodedText)
-            // Stop scanner immediately and pass the result
-            if (html5QrCodeRef.current) {
-              console.log('Stopping scanner...')
-              html5QrCodeRef.current.stop()
-                .then(() => {
-                  console.log('Scanner stopped, calling onScanSuccess')
-                  setScanStatus('Processing...')
-                  setTimeout(() => onScanSuccess(decodedText), 100)
-                })
-                .catch(err => {
-                  console.error('Error stopping scanner:', err)
-                  // Call success anyway
-                  setScanStatus('Processing...')
-                  setTimeout(() => onScanSuccess(decodedText), 100)
-                })
-            } else {
-              setScanStatus('Processing...')
-              setTimeout(() => onScanSuccess(decodedText), 100)
-            }
-          },
-          (errorMessage) => {
-            // Scanning errors (can be ignored - these happen constantly while scanning)
+        // Get camera stream
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
           }
-        )
+        })
         
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current)
+        streamRef.current = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
         }
+
+        // Create barcode detector with retail formats
+        const formats = ['ean_13', 'ean_8', 'upc_a', 'upc_e']
+        const supportedFormats = await window.BarcodeDetector.getSupportedFormats()
+        const availableFormats = formats.filter(f => supportedFormats.includes(f))
         
-        console.log('Scanner started successfully')
-        setDebugInfo('🎯 Camera ready - scan any barcode now!')
-        setScanStatus('🎯 Point camera at barcode...')
-        setIsInitializing(false)
-        isStartingRef.current = false
+        detectorRef.current = new window.BarcodeDetector({
+          formats: availableFormats
+        })
+
+        setStatus('🎯 Camera ready - point at barcode!')
+        
+        // Start scanning loop
+        scanningRef.current = true
+        scanForBarcodes()
+
       } catch (err) {
-        console.error("Error starting scanner:", err)
-        
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current)
-        }
-        
-        let errorMsg = "Unable to access camera. "
-        
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          errorMsg += "Camera permission denied. Please allow camera access and refresh."
+        console.error('Scanner initialization error:', err)
+        let errorMsg = 'Unable to start camera. '
+        if (err.name === 'NotAllowedError') {
+          errorMsg += 'Please allow camera access.'
         } else if (err.name === 'NotFoundError') {
-          errorMsg += "No camera found on this device."
-        } else if (err.name === 'NotReadableError') {
-          errorMsg += "Camera is already in use."
-        } else if (err.name === 'NotSupportedError') {
-          errorMsg += "Camera not supported on this device."
+          errorMsg += 'No camera found.'
         } else {
-          errorMsg += err.message || "Use manual entry below."
+          errorMsg += err.message
         }
-        
         setError(errorMsg)
-        setDebugInfo('')
-        setIsInitializing(false)
-        setShowManualEntry(true)
-        isStartingRef.current = false
+        setStatus('')
       }
     }
 
-    startScanner()
+    const scanForBarcodes = async () => {
+      if (!scanningRef.current || !videoRef.current || !detectorRef.current) {
+        return
+      }
+
+      try {
+        const barcodes = await detectorRef.current.detect(videoRef.current)
+        
+        if (barcodes.length > 0) {
+          const barcode = barcodes[0]
+          const code = barcode.rawValue
+          
+          // Count detections for verification
+          if (!detectedCodesRef.current[code]) {
+            detectedCodesRef.current[code] = 0
+          }
+          detectedCodesRef.current[code]++
+          
+          console.log(`Detected: ${code} (${detectedCodesRef.current[code]}/2)`)
+          setStatus(`📍 Found: ${code} (${detectedCodesRef.current[code]}/2)`)
+          
+          // Need 2 consistent reads
+          if (detectedCodesRef.current[code] >= 2) {
+            console.log('✅ Barcode confirmed:', code)
+            setStatus(`✅ CONFIRMED: ${code}`)
+            scanningRef.current = false
+            
+            // Stop camera
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => track.stop())
+            }
+            
+            setTimeout(() => {
+              onScanSuccess(code)
+            }, 500)
+            return
+          }
+        }
+      } catch (err) {
+        console.error('Detection error:', err)
+      }
+
+      // Continue scanning
+      if (scanningRef.current) {
+        requestAnimationFrame(scanForBarcodes)
+      }
+    }
+
+    initScanner()
 
     return () => {
-      isStartingRef.current = false
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-      if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop().catch(err => console.error("Error stopping scanner:", err))
+      scanningRef.current = false
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
       }
     }
   }, [onScanSuccess])
 
   const handleCancel = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-    if (html5QrCodeRef.current) {
-      html5QrCodeRef.current.stop().catch(err => console.error("Error stopping scanner:", err))
+    scanningRef.current = false
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
     }
     onCancel()
-  }
-
-  const handleManualSubmit = (e) => {
-    e.preventDefault()
-    if (manualBarcode.trim()) {
-      onScanSuccess(manualBarcode.trim())
-    }
   }
 
   return (
     <div className="barcode-scanner">
       <div className="scanner-header">
-        <h2>Scan Product Barcode</h2>
-        <p>Position the barcode within the frame</p>
+        <h2>📷 Scan Barcode</h2>
+        <p>Hold phone steady over barcode</p>
       </div>
 
       {error && (
         <div className="scanner-error">
           <p>{error}</p>
-          <button onClick={handleCancel}>Go Back</button>
+          {!isSupported && (
+            <p style={{ fontSize: '14px', marginTop: '10px' }}>
+              💡 This feature requires Chrome or Edge browser
+            </p>
+          )}
         </div>
       )}
 
-      {isInitializing && !error && (
-        <div className="scanner-loading">
-          <p>Initializing camera...</p>
-          {debugInfo && <p className="debug-info">{debugInfo}</p>}
-          <div className="spinner"></div>
-        </div>
-      )}
+      <div style={{
+        width: '100%',
+        maxWidth: '500px',
+        margin: '20px auto',
+        backgroundColor: '#000',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        border: '3px solid #4CAF50'
+      }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          style={{
+            width: '100%',
+            height: 'auto',
+            display: 'block'
+          }}
+        />
+      </div>
 
-      <div id="barcode-reader" ref={scannerRef}></div>
-
-      {scanStatus && (
+      {status && (
         <div style={{
-          backgroundColor: scanStatus.includes('✅') ? '#4CAF50' : '#2196F3',
+          backgroundColor: status.includes('✅') ? '#4CAF50' : status.includes('📍') ? '#FF9800' : '#2196F3',
           color: 'white',
           padding: '15px',
-          margin: '10px 0',
+          margin: '10px auto',
           borderRadius: '8px',
           fontSize: '18px',
           fontWeight: 'bold',
-          textAlign: 'center'
+          textAlign: 'center',
+          maxWidth: '500px'
         }}>
-          {scanStatus}
+          {status}
         </div>
       )}
+
+      <div style={{
+        textAlign: 'center',
+        color: '#666',
+        fontSize: '14px',
+        margin: '10px 0'
+      }}>
+        💡 Keep barcode centered and in focus
+      </div>
 
       <div className="scanner-actions">
         <button onClick={handleCancel} className="cancel-button">
           Cancel
         </button>
       </div>
-
-      <div className="scanner-tips">
-        <h3>Tips for best results:</h3>
-        <ul>
-          <li>Hold your device steady</li>
-          <li>Ensure good lighting</li>
-          <li>Keep barcode flat and in focus</li>
-        </ul>
-      </div>
-
-      {(showManualEntry || error) && (
-        <div className="manual-entry">
-          <h3>Manual Entry</h3>
-          <p>Can't scan? Enter the barcode numbers manually:</p>
-          <form onSubmit={handleManualSubmit}>
-            <input
-              type="text"
-              value={manualBarcode}
-              onChange={(e) => setManualBarcode(e.target.value)}
-              placeholder="Enter barcode (e.g., 737628064502)"
-              className="barcode-input"
-            />
-            <button type="submit" className="submit-button">
-              Look Up Product
-            </button>
-          </form>
-        </div>
-      )}
     </div>
   )
 }
