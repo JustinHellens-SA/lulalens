@@ -77,13 +77,6 @@ function App() {
                 Analyze Product
               </button>
             </form>
-
-            <div className="examples">
-              <p>Try these example barcodes:</p>
-              <button onClick={() => setBarcode('737628064502')} className="example-btn">737628064502</button>
-              <button onClick={() => setBarcode('0041220576500')} className="example-btn">0041220576500</button>
-              <button onClick={() => setBarcode('5000112576104')} className="example-btn">5000112576104</button>
-            </div>
           </div>
         )}
 
