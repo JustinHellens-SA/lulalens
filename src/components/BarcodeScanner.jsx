@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Html5Qrcode } from 'html5-qrcode'
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import './BarcodeScanner.css'
 
 function BarcodeScanner({ onScanSuccess, onCancel }) {
@@ -48,20 +48,40 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
         const config = {
           fps: 10,
           qrbox: { width: 250, height: 250 },
-          formatsToSupport: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39
+          ],
+          aspectRatio: 1.0
         }
 
-        console.log('Starting html5-qrcode...')
+        console.log('Starting html5-qrcode with config:', config)
         
         await html5QrCode.start(
           { facingMode: "environment" },
           config,
           (decodedText) => {
-            console.log('Barcode scanned:', decodedText)
+            console.log('✅ Barcode detected:', decodedText)
+            // Stop scanner immediately and pass the result
             if (html5QrCodeRef.current) {
-              html5QrCodeRef.current.stop().catch(err => console.error('Error stopping:', err))
+              console.log('Stopping scanner...')
+              html5QrCodeRef.current.stop()
+                .then(() => {
+                  console.log('Scanner stopped, calling onScanSuccess')
+                  onScanSuccess(decodedText)
+                })
+                .catch(err => {
+                  console.error('Error stopping scanner:', err)
+                  // Call success anyway
+                  onScanSuccess(decodedText)
+                })
+            } else {
+              onScanSuccess(decodedText)
             }
-            onScanSuccess(decodedText)
           },
           (errorMessage) => {
             // Scanning errors (can be ignored - these happen constantly while scanning)
