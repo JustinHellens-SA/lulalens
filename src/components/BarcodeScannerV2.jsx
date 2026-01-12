@@ -25,7 +25,7 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
           return
         }
 
-        setScanStatus('🎯 Camera ready - scan barcode now!')
+        setScanStatus('🎯 Camera ready - hold barcode steady in view')
         
         // Use the back camera if available
         const backCamera = videoDevices.find(device => 
@@ -36,21 +36,29 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         setIsScanning(true)
 
         // Start decoding from video device
-        await codeReader.decodeFromVideoDevice(
+        codeReader.decodeFromVideoDevice(
           backCamera.deviceId,
           videoRef.current,
           (result, err) => {
             if (result) {
-              setScanStatus(`✅ FOUND: ${result.getText()}`)
-              // Stop scanning
-              codeReader.reset()
+              const barcode = result.getText()
+              console.log('✅ Barcode detected:', barcode)
+              setScanStatus(`✅ FOUND: ${barcode}`)
+              
+              // Stop scanning immediately
+              if (codeReaderRef.current) {
+                codeReaderRef.current.reset()
+              }
               setIsScanning(false)
-              // Call success after a brief moment
+              
+              // Call success after brief delay to show the found message
               setTimeout(() => {
-                onScanSuccess(result.getText())
-              }, 500)
+                onScanSuccess(barcode)
+              }, 800)
             }
-            // Errors happen constantly while scanning - ignore them
+            if (err && err.name !== 'NotFoundException') {
+              console.error('Scan error:', err)
+            }
           }
         )
       } catch (err) {
@@ -62,7 +70,7 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         } else if (err.name === 'NotFoundError') {
           errorMsg += 'No camera found.'
         } else {
-          errorMsg += 'Use manual entry below.'
+          errorMsg += err.message || 'Use manual entry below.'
         }
         
         setError(errorMsg)
@@ -75,7 +83,11 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
 
     return () => {
       if (codeReaderRef.current) {
-        codeReaderRef.current.reset()
+        try {
+          codeReaderRef.current.reset()
+        } catch (e) {
+          console.log('Error cleaning up scanner:', e)
+        }
       }
     }
   }, [onScanSuccess])
@@ -98,7 +110,7 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
     <div className="barcode-scanner">
       <div className="scanner-header">
         <h2>📷 Scan Barcode</h2>
-        <p>Point camera at barcode</p>
+        <p>Hold barcode flat in camera view</p>
       </div>
 
       {error && (
@@ -109,19 +121,23 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
 
       <div style={{ 
         width: '100%', 
-        maxWidth: '500px', 
+        maxWidth: '600px', 
         margin: '20px auto',
         backgroundColor: '#000',
         borderRadius: '10px',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        border: '3px solid #4CAF50'
       }}>
         <video 
           ref={videoRef} 
           style={{ 
             width: '100%', 
             height: 'auto',
-            display: 'block'
+            display: 'block',
+            minHeight: '300px'
           }}
+          autoPlay
+          playsInline
         />
       </div>
 
@@ -129,17 +145,26 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         <div style={{
           backgroundColor: scanStatus.includes('✅') ? '#4CAF50' : '#2196F3',
           color: 'white',
-          padding: '15px',
+          padding: '20px',
           margin: '10px auto',
           borderRadius: '8px',
-          fontSize: '18px',
+          fontSize: '20px',
           fontWeight: 'bold',
           textAlign: 'center',
-          maxWidth: '500px'
+          maxWidth: '600px'
         }}>
           {scanStatus}
         </div>
       )}
+
+      <div style={{ 
+        textAlign: 'center', 
+        color: '#666', 
+        fontSize: '14px',
+        margin: '10px 0'
+      }}>
+        💡 Tip: Tap screen to focus if barcode is blurry
+      </div>
 
       <div className="scanner-actions">
         <button onClick={handleCancel} className="cancel-button">
