@@ -54,11 +54,11 @@ function App() {
       <main className="app-main">
         {!scannedProduct && !showScanner && (
           <div className="welcome">
-            <h2>Scan or enter a product barcode</h2>
+            <h2>Scan Product Barcode</h2>
             <p>Identify seed oils, preservatives, and problematic additives</p>
             
             <button onClick={() => setShowScanner(true)} className="camera-scan-button">
-              📷 Use Camera to Scan Barcode
+              📷 Scan Barcode with Camera
             </button>
 
             <div className="divider">
@@ -72,6 +72,7 @@ function App() {
                 onChange={(e) => setBarcode(e.target.value)}
                 placeholder="Enter barcode manually (e.g., 737628064502)"
                 className="barcode-input-main"
+                inputMode="numeric"
               />
               <button type="submit" className="scan-button">
                 Analyze Product
