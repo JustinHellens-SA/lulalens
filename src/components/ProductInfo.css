@@ -442,3 +442,156 @@
   background: linear-gradient(135deg, #5c3500 0%, #8b4513 100%) !important;
   border-left-color: #ff9800 !important;
 }
+
+/* Product Facts Against Evidence */
+.product-facts {
+  background: linear-gradient(135deg, #1a1f3a 0%, #2d3561 100%);
+  padding: 2rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  border: 2px solid #667eea;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+}
+
+.product-facts h3 {
+  color: #a5b4fc;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  text-align: center;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+  padding-bottom: 1rem;
+}
+
+.facts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.fact-block {
+  background-color: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+
+.fact-block.critical-fact {
+  border-left-color: #ff1744;
+  background: linear-gradient(135deg, rgba(139, 0, 0, 0.2) 0%, rgba(92, 10, 10, 0.3) 100%);
+}
+
+.fact-block.high-fact {
+  border-left-color: #ff9800;
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.2) 0%, rgba(92, 53, 0, 0.3) 100%);
+}
+
+.fact-block.nutrient-fact {
+  border-left-color: #ffd700;
+  background: linear-gradient(135deg, rgba(184, 134, 11, 0.2) 0%, rgba(139, 101, 8, 0.3) 100%);
+}
+
+.fact-block.positive-fact {
+  border-left-color: #4CAF50;
+  background: linear-gradient(135deg, rgba(58, 107, 31, 0.3) 0%, rgba(45, 80, 22, 0.4) 100%);
+}
+
+.fact-block.moderate-fact {
+  border-left-color: #FFA726;
+  background: linear-gradient(135deg, rgba(139, 87, 42, 0.2) 0%, rgba(92, 58, 28, 0.3) 100%);
+}
+
+.fact-block h4 {
+  color: #e2e8f0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fact-item {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.fact-item:last-child {
+  margin-bottom: 0;
+}
+
+.fact-item p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.fact-finding {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.fact-evidence {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-style: italic;
+  padding-left: 1rem;
+  border-left: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.fact-source {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.fact-verdict {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.fact-verdict.critical {
+  background-color: rgba(255, 23, 68, 0.2);
+  color: #ff6b8a;
+  border: 1px solid #ff1744;
+}
+
+.fact-verdict.high {
+  background-color: rgba(255, 152, 0, 0.2);
+  color: #ffb74d;
+  border: 1px solid #ff9800;
+}
+
+.fact-verdict.moderate {
+  background-color: rgba(255, 167, 38, 0.2);
+  color: #ffc947;
+  border: 1px solid #FFA726;
+}
+
+.fact-verdict.positive {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #90EE90;
+  border: 1px solid #4CAF50;
+}
+
+/* Responsive design for facts */
+@media (max-width: 600px) {
+  .product-facts {
+    padding: 1.5rem 1rem;
+  }
+
+  .fact-block {
+    padding: 1rem;
+  }
+
+  .fact-item {
+    padding: 0.75rem;
+  }
+
+  .fact-evidence {
+    padding-left: 0.5rem;
+  }
+}

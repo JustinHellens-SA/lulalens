@@ -88,6 +88,127 @@ function ProductInfo({ product, onScanAgain, userConditions = [] }) {
         </div>
       )}
 
+      {/* Product Facts Against Evidence */}
+      {analysis && (analysis.warnings.length > 0 || analysis.positiveFindings?.length > 0 || analysis.nutrientWarnings.length > 0) && (
+        <div className="product-facts">
+          <h3>🔬 Product Analysis: What We Found</h3>
+          <div className="facts-container">
+            
+            {/* Critical Findings */}
+            {analysis.warnings.filter(w => w.severity === 'critical').length > 0 && (
+              <div className="fact-block critical-fact">
+                <h4>⛔ Critical Concerns</h4>
+                {analysis.warnings.filter(w => w.severity === 'critical').map((warning, index) => (
+                  <div key={index} className="fact-item">
+                    <p className="fact-finding">
+                      <strong>Found:</strong> {warning.ingredient} in this product's ingredients
+                    </p>
+                    <p className="fact-evidence">
+                      <strong>Evidence:</strong> {warning.reason}
+                    </p>
+                    <p className="fact-source">
+                      <strong>Source:</strong> {warning.source}
+                    </p>
+                    <p className="fact-verdict critical">
+                      <strong>Verdict:</strong> Should be avoided completely for {warning.condition}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* High Concerns */}
+            {analysis.warnings.filter(w => w.severity === 'high').length > 0 && (
+              <div className="fact-block high-fact">
+                <h4>🚨 High Concerns</h4>
+                {analysis.warnings.filter(w => w.severity === 'high').map((warning, index) => (
+                  <div key={index} className="fact-item">
+                    <p className="fact-finding">
+                      <strong>Found:</strong> {warning.ingredient} listed in ingredients
+                    </p>
+                    <p className="fact-evidence">
+                      <strong>Evidence:</strong> {warning.reason}
+                    </p>
+                    <p className="fact-source">
+                      <strong>Source:</strong> {warning.source}
+                    </p>
+                    <p className="fact-verdict high">
+                      <strong>Verdict:</strong> Should be strictly limited for {warning.condition}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Nutrient Concerns */}
+            {analysis.nutrientWarnings.length > 0 && (
+              <div className="fact-block nutrient-fact">
+                <h4>📊 Nutrient Analysis</h4>
+                {analysis.nutrientWarnings.map((warning, index) => (
+                  <div key={index} className="fact-item">
+                    <p className="fact-finding">
+                      <strong>Found:</strong> {warning.nutrient} at {warning.value.toFixed(1)}{warning.unit} per 100g
+                    </p>
+                    <p className="fact-evidence">
+                      <strong>Evidence:</strong> {warning.reason}
+                    </p>
+                    <p className="fact-verdict moderate">
+                      <strong>Verdict:</strong> Exceeds recommended limit of {warning.limit}{warning.unit} for {warning.condition}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Positive Findings */}
+            {analysis.positiveFindings && analysis.positiveFindings.length > 0 && (
+              <div className="fact-block positive-fact">
+                <h4>✅ Beneficial Ingredients</h4>
+                {analysis.positiveFindings.map((finding, index) => (
+                  <div key={index} className="fact-item">
+                    <p className="fact-finding">
+                      <strong>Found:</strong> {finding.ingredient} in this product
+                    </p>
+                    <p className="fact-evidence">
+                      <strong>Evidence:</strong> {finding.benefit}
+                    </p>
+                    <p className="fact-verdict positive">
+                      <strong>Verdict:</strong> Beneficial for {finding.condition}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Moderate Concerns */}
+            {analysis.warnings.filter(w => w.severity === 'moderate').length > 0 && (
+              <div className="fact-block moderate-fact">
+                <h4>⚠️ Moderate Concerns</h4>
+                {analysis.warnings.filter(w => w.severity === 'moderate').map((warning, index) => (
+                  <div key={index} className="fact-item">
+                    <p className="fact-finding">
+                      <strong>Found:</strong> {warning.ingredient} present in ingredients
+                    </p>
+                    <p className="fact-evidence">
+                      <strong>Evidence:</strong> {warning.reason}
+                    </p>
+                    {warning.source && (
+                      <p className="fact-source">
+                        <strong>Source:</strong> {warning.source}
+                      </p>
+                    )}
+                    <p className="fact-verdict moderate">
+                      <strong>Verdict:</strong> Use caution with {warning.condition}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
       {/* Positive Findings - Show what's GOOD */}
       {analysis && analysis.positiveFindings && analysis.positiveFindings.length > 0 && (
         <div className="positive-findings">
