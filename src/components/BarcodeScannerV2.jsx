@@ -24,15 +24,14 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
           type: "LiveStream",
           target: scannerRef.current,
           constraints: {
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 },
-            facingMode: "environment",
-            aspectRatio: { min: 1, max: 2 }
+            width: { min: 480, ideal: 640, max: 800 },
+            height: { min: 320, ideal: 480, max: 600 },
+            facingMode: "environment"
           }
         },
         locator: {
           patchSize: "medium",
-          halfSample: true
+          halfSample: false
         },
         numOfWorkers: 4,
         frequency: 10,
@@ -73,8 +72,8 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         const code = result.codeResult.code
         const quality = result.codeResult.quality || 0
         
-        // Only accept high quality reads
-        if (quality < 75) {
+        // Only accept decent quality reads
+        if (quality < 60) {
           console.log(`Low quality read (${quality.toFixed(0)}): ${code}`)
           return
         }
@@ -88,8 +87,8 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         setLastDetected(code)
         console.log(`Detected: ${code} (Quality: ${quality.toFixed(0)}, Count: ${detectionCountRef.current[code]})`)
         
-        // Need 3 consistent high-quality reads before accepting
-        if (detectionCountRef.current[code] >= 3) {
+        // Need 2 consistent reads before accepting
+        if (detectionCountRef.current[code] >= 2) {
           console.log('✅ Barcode confirmed:', code)
           
           detectedRef.current = true
@@ -101,7 +100,7 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
             onScanSuccess(code)
           }, 800)
         } else {
-          setScanStatus(`📍 Reading... (${detectionCountRef.current[code]}/3)`)
+          setScanStatus(`📍 Reading... (${detectionCountRef.current[code]}/2)`)
         }
       })
     }
@@ -145,13 +144,13 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         ref={scannerRef}
         style={{ 
           width: '100%', 
-          maxWidth: '640px', 
+          maxWidth: '400px', 
           margin: '20px auto',
           backgroundColor: '#000',
           borderRadius: '10px',
           overflow: 'hidden',
           border: '3px solid #4CAF50',
-          minHeight: '480px'
+          minHeight: '300px'
         }}
       />
 
@@ -159,13 +158,13 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         <div style={{
           backgroundColor: scanStatus.includes('✅') ? '#4CAF50' : scanStatus.includes('📍') ? '#FF9800' : '#2196F3',
           color: 'white',
-          padding: '20px',
+          padding: '15px',
           margin: '10px auto',
           borderRadius: '8px',
-          fontSize: '20px',
+          fontSize: '18px',
           fontWeight: 'bold',
           textAlign: 'center',
-          maxWidth: '640px'
+          maxWidth: '400px'
         }}>
           {scanStatus}
         </div>
@@ -175,8 +174,8 @@ function BarcodeScannerV2({ onScanSuccess, onCancel }) {
         <div style={{
           color: '#666',
           textAlign: 'center',
-          fontSize: '16px',
-          marginTop: '10px'
+          fontSize: '14px',
+          marginTop: '5px'
         }}>
           Last seen: {lastDetected}
         </div>
