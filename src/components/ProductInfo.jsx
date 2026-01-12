@@ -92,6 +92,13 @@ function ProductInfo({ product, onScanAgain, userConditions = [] }) {
         </div>
       )}
 
+      {userConditions.length === 0 && (
+        <div className="no-conditions-warning">
+          <p>⚠️ <strong>No health conditions selected.</strong> Using general healthy eating guidelines only.</p>
+          <p>💡 <strong>Tip:</strong> Select your health conditions above (Cancer, Diabetes, etc.) for personalized ingredient analysis with evidence-based warnings.</p>
+        </div>
+      )}
+
       {/* Product Facts Against Evidence */}
       {analysis && (analysis.warnings.length > 0 || analysis.positiveFindings?.length > 0 || analysis.nutrientWarnings.length > 0) && (
         <div className="product-facts">
