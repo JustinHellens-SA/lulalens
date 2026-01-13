@@ -1,29 +1,38 @@
 import { useEffect, useRef, useState } from 'react'
+import Quagga from '@ericblade/quagga2'
 import './BarcodeScanner.css'
 
 function BarcodeScanner({ onScanSuccess, onCancel }) {
   const [error, setError] = useState(null)
   const [status, setStatus] = useState('Initializing...')
   const [manualBarcode, setManualBarcode] = useState('')
+  const [scannerType, setScannerType] = useState(null)
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const detectorRef = useRef(null)
   const scanningRef = useRef(true)
   const detectedCodesRef = useRef({})
+  const scannerRef = useRef(null)
 
   useEffect(() => {
     const initScanner = async () => {
-      // Check if Barcode Detection API is supported
-      if (!('BarcodeDetector' in window)) {
-        setError('Barcode scanner requires Chrome or Edge browser. Please switch browsers or use manual entry.')
-        setStatus('')
-        return
+      // Check if native Barcode Detection API is supported (Android Chrome/Edge)
+      if ('BarcodeDetector' in window) {
+        console.log('✨ Using native Barcode Detection API (fast & small)')
+        setScannerType('native')
+        initNativeScanner()
+      } else {
+        // Fallback to Quagga2 for iOS/Safari
+        console.log('📱 Using Quagga2 fallback for iOS/Safari')
+        setScannerType('quagga')
+        initQuaggaScanner()
       }
+    }
 
+    const initNativeScanner = async () => {
       try {
         setStatus('🎥 Starting camera...')
         
-        // Get camera stream with rear camera preference
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: 'environment',
@@ -37,7 +46,6 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
           videoRef.current.srcObject = stream
         }
 
-        // Create barcode detector with retail formats
         const formats = ['ean_13', 'ean_8', 'upc_a', 'upc_e']
         const supportedFormats = await window.BarcodeDetector.getSupportedFormats()
         const availableFormats = formats.filter(f => supportedFormats.includes(f))
@@ -47,25 +55,11 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
         })
 
         setStatus('🎯 Point camera at barcode')
-        
-        // Start scanning loop
         scanningRef.current = true
         scanForBarcodes()
 
       } catch (err) {
-        console.error('Scanner initialization error:', err)
-        let errorMsg = 'Unable to start camera. '
-        if (err.name === 'NotAllowedError') {
-          errorMsg += 'Please allow camera access and refresh the page.'
-        } else if (err.name === 'NotFoundError') {
-          errorMsg += 'No camera found on this device.'
-        } else if (err.name === 'NotReadableError') {
-          errorMsg += 'Camera is in use by another app.'
-        } else {
-          errorMsg += err.message || 'Try manual entry below.'
-        }
-        setError(errorMsg)
-        setStatus('')
+        handleCameraError(err)
       }
     }
 
@@ -81,7 +75,6 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
           const barcode = barcodes[0]
           const code = barcode.rawValue
           
-          // Count detections for verification
           if (!detectedCodesRef.current[code]) {
             detectedCodesRef.current[code] = 0
           }
@@ -90,13 +83,11 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
           console.log(`Detected: ${code} (${detectedCodesRef.current[code]}/2)`)
           setStatus(`📍 Found: ${code} (${detectedCodesRef.current[code]}/2)`)
           
-          // Need 2 consistent reads
           if (detectedCodesRef.current[code] >= 2) {
             console.log('✅ Barcode confirmed:', code)
             setStatus(`✅ CONFIRMED: ${code}`)
             scanningRef.current = false
             
-            // Stop camera
             if (streamRef.current) {
               streamRef.current.getTracks().forEach(track => track.stop())
             }
@@ -111,16 +102,90 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
         console.error('Detection error:', err)
       }
 
-      // Continue scanning
       if (scanningRef.current) {
         requestAnimationFrame(scanForBarcodes)
       }
+    }
+
+    const initQuaggaScanner = () => {
+      setStatus('🎥 Starting camera...')
+      
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: scannerRef.current,
+          constraints: {
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 },
+            facingMode: "environment"
+          }
+        },
+        locator: {
+          patchSize: "medium",
+          halfSample: true
+        },
+        numOfWorkers: navigator.hardwareConcurrency || 4,
+        frequency: 10,
+        decoder: {
+          readers: ["ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader"],
+          multiple: false
+        },
+        locate: true
+      }, (err) => {
+        if (err) {
+          handleCameraError(err)
+          return
+        }
+        
+        setStatus('🎯 Point camera at barcode')
+        Quagga.start()
+      })
+
+      Quagga.onDetected((result) => {
+        const code = result.codeResult.code
+        
+        if (!detectedCodesRef.current[code]) {
+          detectedCodesRef.current[code] = 0
+        }
+        detectedCodesRef.current[code]++
+        
+        console.log(`Detected: ${code} (${detectedCodesRef.current[code]}/2)`)
+        setStatus(`📍 Found: ${code} (${detectedCodesRef.current[code]}/2)`)
+        
+        if (detectedCodesRef.current[code] >= 2) {
+          console.log('✅ Barcode confirmed:', code)
+          setStatus(`✅ CONFIRMED: ${code}`)
+          Quagga.stop()
+          
+          setTimeout(() => {
+            onScanSuccess(code)
+          }, 500)
+        }
+      })
+    }
+
+    const handleCameraError = (err) => {
+      console.error('Scanner initialization error:', err)
+      let errorMsg = 'Unable to start camera. '
+      if (err.name === 'NotAllowedError') {
+        errorMsg += 'Please allow camera access and refresh the page.'
+      } else if (err.name === 'NotFoundError') {
+        errorMsg += 'No camera found on this device.'
+      } else if (err.name === 'NotReadableError') {
+        errorMsg += 'Camera is in use by another app.'
+      } else {
+        errorMsg += err.message || 'Try manual entry below.'
+      }
+      setError(errorMsg)
+      setStatus('')
     }
 
     initScanner()
 
     return () => {
       scanningRef.current = false
+      Quagga.stop()
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop())
       }
@@ -129,6 +194,7 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
 
   const handleCancel = () => {
     scanningRef.current = false
+    Quagga.stop()
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
     }
@@ -139,6 +205,7 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
     e.preventDefault()
     if (manualBarcode.trim()) {
       scanningRef.current = false
+      Quagga.stop()
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop())
       }
@@ -159,27 +226,43 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
         </div>
       )}
 
-      <div style={{
-        width: '100%',
-        maxWidth: '500px',
-        margin: '20px auto',
-        backgroundColor: '#000',
-        borderRadius: '10px',
-        overflow: 'hidden',
-        border: '3px solid #4CAF50'
-      }}>
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          style={{
-            width: '100%',
-            height: 'auto',
-            display: 'block'
+      {scannerType === 'native' ? (
+        <div style={{
+          width: '100%',
+          maxWidth: '500px',
+          margin: '20px auto',
+          backgroundColor: '#000',
+          borderRadius: '10px',
+          overflow: 'hidden',
+          border: '3px solid #4CAF50'
+        }}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block'
+            }}
+          />
+        </div>
+      ) : (
+        <div 
+          ref={scannerRef}
+          style={{ 
+            width: '100%', 
+            maxWidth: '500px', 
+            margin: '20px auto',
+            backgroundColor: '#000',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            border: '3px solid #4CAF50',
+            minHeight: '300px'
           }}
         />
-      </div>
+      )}
 
       {status && (
         <div style={{
