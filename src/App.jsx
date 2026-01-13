@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import ProductInfo from './components/ProductInfo'
-import ConditionSelector from './components/ConditionSelector'
 import BarcodeScanner from './components/BarcodeScanner'
 import './App.css'
 
@@ -8,14 +7,6 @@ function App() {
   const [scannedProduct, setScannedProduct] = useState(null)
   const [barcode, setBarcode] = useState('')
   const [showScanner, setShowScanner] = useState(false)
-  const [userConditions, setUserConditions] = useState(() => {
-    const saved = localStorage.getItem('lulaLensConditions')
-    return saved ? JSON.parse(saved) : []
-  })
-
-  useEffect(() => {
-    localStorage.setItem('lulaLensConditions', JSON.stringify(userConditions))
-  }, [userConditions])
 
   const handleScanSuccess = (barcodeValue) => {
     setScannedProduct({ barcode: barcodeValue })
@@ -44,21 +35,17 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>🔍 LulaLens</h1>
-        <p className="tagline">Personalized Food Analysis</p>
-        <ConditionSelector 
-          selectedConditions={userConditions}
-          onConditionsChange={setUserConditions}
-        />
+        <p className="tagline">Scan & Discover Product Information</p>
       </header>
 
       <main className="app-main">
         {!scannedProduct && !showScanner && (
           <div className="welcome">
             <h2>Scan Product Barcode</h2>
-            <p>Identify seed oils, preservatives, and problematic additives</p>
+            <p>Get instant product information and nutrition facts</p>
             
             <button onClick={() => setShowScanner(true)} className="camera-scan-button">
-              📷 Use Camera Scanner
+              📷 Scan with Camera
             </button>
 
             <div className="divider">
@@ -70,12 +57,12 @@ function App() {
                 type="text"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
-                placeholder="Enter barcode manually (e.g., 737628064502)"
+                placeholder="Enter barcode manually"
                 className="barcode-input-main"
                 inputMode="numeric"
               />
               <button type="submit" className="scan-button">
-                Analyze Product
+                Look Up Product
               </button>
             </form>
           </div>
@@ -92,13 +79,12 @@ function App() {
           <ProductInfo 
             product={scannedProduct}
             onScanAgain={handleScanAgain}
-            userConditions={userConditions}
           />
         )}
       </main>
 
       <footer className="app-footer">
-        <p>Powered by Justin Hellens</p>
+        <p>Powered by Open Food Facts</p>
       </footer>
     </div>
   )

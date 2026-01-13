@@ -61,7 +61,15 @@
 .brand {
   color: #888;
   font-size: 1.1rem;
+  margin: 0.3rem 0;
 }
+
+.quantity {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0.3rem 0;
+}
+
 
 .safety-score {
   padding: 1.5rem;
@@ -273,29 +281,86 @@
 .nutrition-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .nutrition-item {
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem;
+  align-items: center;
+  padding: 0.75rem;
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
 }
 
-.nutrition-item span:first-child {
+.nutrition-item.sub {
+  margin-left: 1rem;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.nutrition-item .label {
   color: #888;
+  font-size: 0.95rem;
 }
 
-.nutrition-item span:last-child {
+.nutrition-item .value {
   font-weight: 600;
+  color: #fff;
 }
 
-.product-actions {
-  margin-top: 2rem;
-  text-align: center;
+.allergens-section {
+  background-color: rgba(255, 68, 68, 0.1);
+  border-left: 4px solid #ff4444;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
 }
+
+.allergens-section h3 {
+  color: #ff4444;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+
+.allergens-section p {
+  color: #ccc;
+  line-height: 1.6;
+}
+
+.additional-info {
+  background-color: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.info-item {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  line-height: 1.6;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.info-item strong {
+  color: #888;
+  display: inline-block;
+  min-width: 120px;
+}
+
+.scan-again-section {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 
 .scan-again-button {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
