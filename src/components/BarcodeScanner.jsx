@@ -15,6 +15,14 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
     detectionCountRef.current = {}
     
     const startScanner = () => {
+      // Ensure the scanner element is ready
+      if (!scannerRef.current) {
+        console.error('Scanner element not found')
+        setError('Scanner element not ready. Please refresh.')
+        setStatus('')
+        return
+      }
+
       setStatus('🎥 Starting camera...')
       
       Quagga.init({
@@ -47,13 +55,21 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
       }, (err) => {
         if (err) {
           console.error('Scanner initialization error:', err)
+          console.error('Error details:', {
+            name: err.name,
+            message: err.message,
+            stack: err.stack
+          })
+          
           let errorMsg = 'Unable to start camera. '
           if (err.name === 'NotAllowedError') {
-            errorMsg += 'Please allow camera access.'
+            errorMsg += 'Please allow camera access and refresh the page.'
           } else if (err.name === 'NotFoundError') {
-            errorMsg += 'No camera found.'
+            errorMsg += 'No camera found on this device.'
+          } else if (err.name === 'NotReadableError' || err.name === 'OverconstrainedError') {
+            errorMsg += 'Camera is in use by another app. Please close other apps using the camera.'
           } else {
-            errorMsg += 'Try manual entry below.'
+            errorMsg += `Error: ${err.message || 'Unknown error'}. Try manual entry below.`
           }
           setError(errorMsg)
           setStatus('')
@@ -94,9 +110,13 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
       })
     }
 
-    startScanner()
+    // Wait for DOM to be ready before starting scanner
+    const timer = setTimeout(() => {
+      startScanner()
+    }, 100)
 
     return () => {
+      clearTimeout(timer)
       Quagga.stop()
       detectedRef.current = false
       detectionCountRef.current = {}
