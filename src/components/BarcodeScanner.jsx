@@ -125,7 +125,10 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
         streamRef.current.getTracks().forEach(track => track.stop())
       }
     }
-  },scanningRef.current = false
+  }, [onScanSuccess])
+
+  const handleCancel = () => {
+    scanningRef.current = false
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
     }
@@ -138,10 +141,7 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
       scanningRef.current = false
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop())
-      }lSubmit = (e) => {
-    e.preventDefault()
-    if (manualBarcode.trim()) {
-      Quagga.stop()
+      }
       onScanSuccess(manualBarcode.trim())
     }
   }
@@ -153,7 +153,13 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
         <p>Hold barcode in camera view</p>
       </div>
 
-      {errostyle={{
+      {error && (
+        <div className="scanner-error">
+          <p>{error}</p>
+        </div>
+      )}
+
+      <div style={{
         width: '100%',
         maxWidth: '500px',
         margin: '20px auto',
@@ -173,13 +179,7 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
             display: 'block'
           }}
         />
-      </div   backgroundColor: '#000',
-          borderRadius: '10px',
-          overflow: 'hidden',
-          border: '3px solid #4CAF50',
-          minHeight: '300px'
-        }}
-      />
+      </div>
 
       {status && (
         <div style={{
