@@ -74,86 +74,86 @@ function ProductInfo({ product, onScanAgain }) {
         <div className="nutrition-section">
           <h3>📊 Nutrition Facts (per 100g)</h3>
           <div className="nutrition-grid">
-            {(prod.nutriments.energy_100g || prod.nutriments['energy-kj_100g'] || prod.nutriments.energy) && (
+            {(prod.nutriments.energy_100g || prod.nutriments['energy-kj_100g'] || prod.nutriments.energy) ? (
               <div className="nutrition-item">
                 <span className="label">Energy</span>
                 <span className="value">
-                  {Math.round(prod.nutriments.energy_100g || prod.nutriments['energy-kj_100g'] || prod.nutriments.energy)} kJ
+                  {Math.round(prod.nutriments.energy_100g || prod.nutriments['energy-kj_100g'] || prod.nutriments.energy || 0)} kJ
                 </span>
               </div>
-            )}
-            {(prod.nutriments['energy-kcal_100g'] || prod.nutriments['energy-kcal']) && (
+            ) : null}
+            {(prod.nutriments['energy-kcal_100g'] || prod.nutriments['energy-kcal']) ? (
               <div className="nutrition-item">
                 <span className="label">Calories</span>
                 <span className="value">
-                  {Math.round(prod.nutriments['energy-kcal_100g'] || prod.nutriments['energy-kcal'])} kcal
+                  {Math.round(prod.nutriments['energy-kcal_100g'] || prod.nutriments['energy-kcal'] || 0)} kcal
                 </span>
               </div>
-            )}
-            {(prod.nutriments.fat_100g !== undefined || prod.nutriments.fat !== undefined) && (
+            ) : null}
+            {(prod.nutriments.fat_100g != null || prod.nutriments.fat != null) ? (
               <div className="nutrition-item">
                 <span className="label">Fat</span>
                 <span className="value">
-                  {(prod.nutriments.fat_100g || prod.nutriments.fat || 0).toFixed(1)} g
+                  {Number(prod.nutriments.fat_100g ?? prod.nutriments.fat ?? 0).toFixed(1)} g
                 </span>
               </div>
-            )}
-            {(prod.nutriments['saturated-fat_100g'] !== undefined || prod.nutriments['saturated-fat'] !== undefined) && (
+            ) : null}
+            {(prod.nutriments['saturated-fat_100g'] != null || prod.nutriments['saturated-fat'] != null) ? (
               <div className="nutrition-item sub">
                 <span className="label">Saturated Fat</span>
                 <span className="value">
-                  {(prod.nutriments['saturated-fat_100g'] || prod.nutriments['saturated-fat'] || 0).toFixed(1)} g
+                  {Number(prod.nutriments['saturated-fat_100g'] ?? prod.nutriments['saturated-fat'] ?? 0).toFixed(1)} g
                 </span>
               </div>
-            )}
-            {(prod.nutriments.carbohydrates_100g !== undefined || prod.nutriments.carbohydrates !== undefined) && (
+            ) : null}
+            {(prod.nutriments.carbohydrates_100g != null || prod.nutriments.carbohydrates != null) ? (
               <div className="nutrition-item">
                 <span className="label">Carbohydrates</span>
                 <span className="value">
-                  {(prod.nutriments.carbohydrates_100g || prod.nutriments.carbohydrates || 0).toFixed(1)} g
+                  {Number(prod.nutriments.carbohydrates_100g ?? prod.nutriments.carbohydrates ?? 0).toFixed(1)} g
                 </span>
               </div>
-            )}
-            {(prod.nutriments.sugars_100g !== undefined || prod.nutriments.sugars !== undefined) && (
+            ) : null}
+            {(prod.nutriments.sugars_100g != null || prod.nutriments.sugars != null) ? (
               <div className="nutrition-item sub">
                 <span className="label">Sugars</span>
                 <span className="value">
-                  {(prod.nutriments.sugars_100g || prod.nutriments.sugars || 0).toFixed(1)} g
+                  {Number(prod.nutriments.sugars_100g ?? prod.nutriments.sugars ?? 0).toFixed(1)} g
                 </span>
               </div>
-            )}
-            {(prod.nutriments.fiber_100g !== undefined || prod.nutriments.fiber !== undefined) && (
+            ) : null}
+            {(prod.nutriments.fiber_100g != null || prod.nutriments.fiber != null) ? (
               <div className="nutrition-item">
                 <span className="label">Fiber</span>
                 <span className="value">
-                  {(prod.nutriments.fiber_100g || prod.nutriments.fiber || 0).toFixed(1)} g
+                  {Number(prod.nutriments.fiber_100g ?? prod.nutriments.fiber ?? 0).toFixed(1)} g
                 </span>
               </div>
-            )}
-            {(prod.nutriments.proteins_100g !== undefined || prod.nutriments.proteins !== undefined) && (
+            ) : null}
+            {(prod.nutriments.proteins_100g != null || prod.nutriments.proteins != null) ? (
               <div className="nutrition-item">
                 <span className="label">Protein</span>
                 <span className="value">
-                  {(prod.nutriments.proteins_100g || prod.nutriments.proteins || 0).toFixed(1)} g
+                  {Number(prod.nutriments.proteins_100g ?? prod.nutriments.proteins ?? 0).toFixed(1)} g
                 </span>
               </div>
-            )}
-            {(prod.nutriments.salt_100g !== undefined || prod.nutriments.salt !== undefined) && (
+            ) : null}
+            {(prod.nutriments.salt_100g != null || prod.nutriments.salt != null) ? (
               <div className="nutrition-item">
                 <span className="label">Salt</span>
                 <span className="value">
-                  {(prod.nutriments.salt_100g || prod.nutriments.salt || 0).toFixed(1)} g
+                  {Number(prod.nutriments.salt_100g ?? prod.nutriments.salt ?? 0).toFixed(1)} g
                 </span>
               </div>
-            )}
-            {(prod.nutriments.sodium_100g !== undefined || prod.nutriments.sodium !== undefined) && (
+            ) : null}
+            {(prod.nutriments.sodium_100g != null || prod.nutriments.sodium != null) ? (
               <div className="nutrition-item sub">
                 <span className="label">Sodium</span>
                 <span className="value">
-                  {(prod.nutriments.sodium_100g || prod.nutriments.sodium || 0).toFixed(1)} g
+                  {Number(prod.nutriments.sodium_100g ?? prod.nutriments.sodium ?? 0).toFixed(3)} g
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       ) : (
