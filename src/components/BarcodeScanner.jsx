@@ -1,134 +1,144 @@
 import { useEffect, useRef, useState } from 'react'
-import Quagga from '@ericblade/quagga2'
 import './BarcodeScanner.css'
 
 function BarcodeScanner({ onScanSuccess, onCancel }) {
   const [error, setError] = useState(null)
   const [status, setStatus] = useState('Initializing...')
   const [manualBarcode, setManualBarcode] = useState('')
-  const scannerRef = useRef(null)
-  const detectedRef = useRef(false)
-  const detectionCountRef = useRef({})
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  const detectorRef = useRef(null)
+  const scanningRef = useRef(true)
+  const detectedCodesRef = useRef({})
 
   useEffect(() => {
-    detectedRef.current = false
-    detectionCountRef.current = {}
-    
-    const startScanner = () => {
-      // Ensure the scanner element is ready
-      if (!scannerRef.current) {
-        console.error('Scanner element not found')
-        setError('Scanner element not ready. Please refresh.')
+    const initScanner = async () => {
+      // Check if Barcode Detection API is supported
+      if (!('BarcodeDetector' in window)) {
+        setError('Barcode scanner requires Chrome or Edge browser. Please switch browsers or use manual entry.')
         setStatus('')
         return
       }
 
-      setStatus('🎥 Starting camera...')
-      
-      Quagga.init({
-        inputStream: {
-          name: "Live",
-          type: "LiveStream",
-          target: scannerRef.current,
-          constraints: {
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 },
-            facingMode: "environment"
-          }
-        },
-        locator: {
-          patchSize: "medium",
-          halfSample: true
-        },
-        numOfWorkers: navigator.hardwareConcurrency || 4,
-        frequency: 10,
-        decoder: {
-          readers: [
-            "ean_reader",
-            "ean_8_reader", 
-            "upc_reader",
-            "upc_e_reader"
-          ],
-          multiple: false
-        },
-        locate: true
-      }, (err) => {
-        if (err) {
-          console.error('Scanner initialization error:', err)
-          console.error('Error details:', {
-            name: err.name,
-            message: err.message,
-            stack: err.stack
-          })
-          
-          let errorMsg = 'Unable to start camera. '
-          if (err.name === 'NotAllowedError') {
-            errorMsg += 'Please allow camera access and refresh the page.'
-          } else if (err.name === 'NotFoundError') {
-            errorMsg += 'No camera found on this device.'
-          } else if (err.name === 'NotReadableError' || err.name === 'OverconstrainedError') {
-            errorMsg += 'Camera is in use by another app. Please close other apps using the camera.'
-          } else {
-            errorMsg += `Error: ${err.message || 'Unknown error'}. Try manual entry below.`
-          }
-          setError(errorMsg)
-          setStatus('')
-          return
-        }
+      try {
+        setStatus('🎥 Starting camera...')
         
-        console.log('Scanner initialized successfully')
-        setStatus('🎯 Point camera at barcode')
-        Quagga.start()
-      })
+        // Get camera stream with rear camera preference
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        })
+        
+        streamRef.current = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
 
-      Quagga.onDetected((result) => {
-        if (detectedRef.current) return
+        // Create barcode detector with retail formats
+        const formats = ['ean_13', 'ean_8', 'upc_a', 'upc_e']
+        const supportedFormats = await window.BarcodeDetector.getSupportedFormats()
+        const availableFormats = formats.filter(f => supportedFormats.includes(f))
         
-        const code = result.codeResult.code
+        detectorRef.current = new window.BarcodeDetector({
+          formats: availableFormats
+        })
+
+        setStatus('🎯 Point camera at barcode')
         
-        // Count detections for verification
-        if (!detectionCountRef.current[code]) {
-          detectionCountRef.current[code] = 0
+        // Start scanning loop
+        scanningRef.current = true
+        scanForBarcodes()
+
+      } catch (err) {
+        console.error('Scanner initialization error:', err)
+        let errorMsg = 'Unable to start camera. '
+        if (err.name === 'NotAllowedError') {
+          errorMsg += 'Please allow camera access and refresh the page.'
+        } else if (err.name === 'NotFoundError') {
+          errorMsg += 'No camera found on this device.'
+        } else if (err.name === 'NotReadableError') {
+          errorMsg += 'Camera is in use by another app.'
+        } else {
+          errorMsg += err.message || 'Try manual entry below.'
         }
-        detectionCountRef.current[code]++
-        
-        console.log(`Detected: ${code} (${detectionCountRef.current[code]}/2)`)
-        setStatus(`📍 Reading... ${code}`)
-        
-        // Need 2 consistent reads
-        if (detectionCountRef.current[code] >= 2) {
-          console.log('✅ Barcode confirmed:', code)
-          detectedRef.current = true
-          setStatus(`✅ SCANNED: ${code}`)
-          
-          Quagga.stop()
-          
-          setTimeout(() => {
-            onScanSuccess(code)
-          }, 500)
-        }
-      })
+        setError(errorMsg)
+        setStatus('')
+      }
     }
 
-    // Wait for DOM to be ready before starting scanner
-    const timer = setTimeout(() => {
-      startScanner()
-    }, 100)
+    const scanForBarcodes = async () => {
+      if (!scanningRef.current || !videoRef.current || !detectorRef.current) {
+        return
+      }
+
+      try {
+        const barcodes = await detectorRef.current.detect(videoRef.current)
+        
+        if (barcodes.length > 0) {
+          const barcode = barcodes[0]
+          const code = barcode.rawValue
+          
+          // Count detections for verification
+          if (!detectedCodesRef.current[code]) {
+            detectedCodesRef.current[code] = 0
+          }
+          detectedCodesRef.current[code]++
+          
+          console.log(`Detected: ${code} (${detectedCodesRef.current[code]}/2)`)
+          setStatus(`📍 Found: ${code} (${detectedCodesRef.current[code]}/2)`)
+          
+          // Need 2 consistent reads
+          if (detectedCodesRef.current[code] >= 2) {
+            console.log('✅ Barcode confirmed:', code)
+            setStatus(`✅ CONFIRMED: ${code}`)
+            scanningRef.current = false
+            
+            // Stop camera
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => track.stop())
+            }
+            
+            setTimeout(() => {
+              onScanSuccess(code)
+            }, 500)
+            return
+          }
+        }
+      } catch (err) {
+        console.error('Detection error:', err)
+      }
+
+      // Continue scanning
+      if (scanningRef.current) {
+        requestAnimationFrame(scanForBarcodes)
+      }
+    }
+
+    initScanner()
 
     return () => {
-      clearTimeout(timer)
-      Quagga.stop()
-      detectedRef.current = false
-      detectionCountRef.current = {}
+      scanningRef.current = false
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+      }
     }
-  }, [onScanSuccess])
-
-  const handleCancel = () => {
-    Quagga.stop()
+  },scanningRef.current = false
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+    }
     onCancel()
   }
 
   const handleManualSubmit = (e) => {
+    e.preventDefault()
+    if (manualBarcode.trim()) {
+      scanningRef.current = false
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+      }lSubmit = (e) => {
     e.preventDefault()
     if (manualBarcode.trim()) {
       Quagga.stop()
@@ -143,19 +153,27 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
         <p>Hold barcode in camera view</p>
       </div>
 
-      {error && (
-        <div className="scanner-error">
-          <p>{error}</p>
-        </div>
-      )}
-
-      <div 
-        ref={scannerRef}
-        style={{ 
-          width: '100%', 
-          maxWidth: '500px', 
-          margin: '20px auto',
-          backgroundColor: '#000',
+      {errostyle={{
+        width: '100%',
+        maxWidth: '500px',
+        margin: '20px auto',
+        backgroundColor: '#000',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        border: '3px solid #4CAF50'
+      }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{
+            width: '100%',
+            height: 'auto',
+            display: 'block'
+          }}
+        />
+      </div   backgroundColor: '#000',
           borderRadius: '10px',
           overflow: 'hidden',
           border: '3px solid #4CAF50',
