@@ -1,4 +1,4 @@
-import Cache from '../utils/cache'
+import Cache from '../utils/cache.js'
 
 const API_BASE_URL = 'https://world.openfoodfacts.org/api/v2'
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes

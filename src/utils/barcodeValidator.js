@@ -4,22 +4,6 @@
  */
 
 /**
- * Calculate checksum for EAN/UPC barcodes
- * @param {string} barcode - Barcode without check digit
- * @returns {number} Check digit
- */
-function calculateChecksum(barcode) {
-  let sum = 0
-  for (let i = 0; i < barcode.length; i++) {
-    const digit = parseInt(barcode[i], 10)
-    // Multiply odd positions (from right) by 3
-    sum += (i % 2 === 0) ? digit * 3 : digit
-  }
-  const checksum = (10 - (sum % 10)) % 10
-  return checksum
-}
-
-/**
  * Validate EAN-13 barcode
  * @param {string} barcode - 13-digit barcode
  * @returns {boolean} True if valid
@@ -28,7 +12,15 @@ function validateEAN13(barcode) {
   if (!/^\d{13}$/.test(barcode)) return false
   
   const checkDigit = parseInt(barcode[12], 10)
-  const calculatedCheck = calculateChecksum(barcode.substring(0, 12))
+  let sum = 0
+  
+  for (let i = 0; i < 12; i++) {
+    const digit = parseInt(barcode[i], 10)
+    // For EAN-13: multiply by 1 for even positions (0,2,4...) and by 3 for odd positions (1,3,5...)
+    sum += (i % 2 === 0) ? digit : digit * 3
+  }
+  
+  const calculatedCheck = (10 - (sum % 10)) % 10
   
   return checkDigit === calculatedCheck
 }
@@ -42,7 +34,15 @@ function validateEAN8(barcode) {
   if (!/^\d{8}$/.test(barcode)) return false
   
   const checkDigit = parseInt(barcode[7], 10)
-  const calculatedCheck = calculateChecksum(barcode.substring(0, 7))
+  let sum = 0
+  
+  for (let i = 0; i < 7; i++) {
+    const digit = parseInt(barcode[i], 10)
+    // For EAN-8: multiply by 3 for even positions (0,2,4,6) and by 1 for odd positions (1,3,5)
+    sum += (i % 2 === 0) ? digit * 3 : digit
+  }
+  
+  const calculatedCheck = (10 - (sum % 10)) % 10
   
   return checkDigit === calculatedCheck
 }
