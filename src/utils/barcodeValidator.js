@@ -70,15 +70,17 @@ function validateUPCA(barcode) {
 
 /**
  * Validate UPC-E barcode (6, 7, or 8 digits)
+ * Note: This performs basic length validation only.
+ * Full UPC-E validation requires expansion to UPC-A format.
  * @param {string} barcode - UPC-E barcode
- * @returns {boolean} True if valid
+ * @returns {boolean} True if basic format is valid
  */
 function validateUPCE(barcode) {
   // UPC-E can be 6, 7, or 8 digits (with system and check digits)
+  // For simplicity, accept 6-8 digit numeric codes as potentially valid
+  // Full UPC-E validation would require expansion to UPC-A
   if (!/^\d{6,8}$/.test(barcode)) return false
   
-  // For simplicity, accept 6-8 digit numeric codes as potentially valid
-  // Full UPC-E validation requires expansion to UPC-A
   return true
 }
 

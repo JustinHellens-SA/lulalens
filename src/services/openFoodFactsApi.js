@@ -9,9 +9,6 @@ const INITIAL_RETRY_DELAY = 1000 // 1 second
 // Create cache instance
 const cache = new Cache()
 
-// Periodically clean up expired cache entries
-setInterval(() => cache.cleanup(), 60000) // Every minute
-
 /**
  * Custom API Error class
  */

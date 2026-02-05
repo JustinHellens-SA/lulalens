@@ -124,8 +124,8 @@ function ProductInfo({ product, onScanAgain }) {
         >
           ← Back
         </button>
-        <span className="keyboard-hint" aria-label="Press Escape to go back">
-          Press ESC to go back
+        <span className="keyboard-hint">
+          Press <kbd>ESC</kbd> to go back
         </span>
       </div>
 

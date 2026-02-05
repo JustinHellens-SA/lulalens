@@ -41,6 +41,16 @@
   font-style: italic;
 }
 
+.keyboard-hint kbd {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-family: monospace;
+  font-style: normal;
+  font-size: 0.8rem;
+}
+
 .loading,
 .error-message {
   text-align: center;
