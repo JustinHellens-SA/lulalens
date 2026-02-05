@@ -78,6 +78,12 @@ function ProductInfo({ product, onScanAgain }) {
     return Number(value).toFixed(decimals)
   }
 
+  // Helper function to convert grams to milligrams
+  const gramsToMilligrams = (value) => {
+    if (value == null) return null
+    return value * 1000
+  }
+
   // Check if serving size data is available
   const hasServingData = prod.serving_size || prod.serving_quantity
 
@@ -177,7 +183,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item">
                 <span className="label">Cholesterol</span>
                 <span className="value">
-                  {formatNutrient(getNutrientValue('cholesterol', '_100g', ''), 1)} mg
+                  {formatNutrient(gramsToMilligrams(getNutrientValue('cholesterol', '_100g', '')), 1)} mg
                 </span>
               </div>
             ) : null}
@@ -245,7 +251,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item vitamin">
                 <span className="label">Vitamin A</span>
                 <span className="value">
-                  {formatNutrient(getNutrientValue('vitamin-a', '_100g', ''), 3)} mg
+                  {formatNutrient(gramsToMilligrams(getNutrientValue('vitamin-a', '_100g', '')), 3)} mg
                 </span>
               </div>
             ) : null}
@@ -253,7 +259,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item vitamin">
                 <span className="label">Vitamin C</span>
                 <span className="value">
-                  {formatNutrient(getNutrientValue('vitamin-c', '_100g', ''), 3)} mg
+                  {formatNutrient(gramsToMilligrams(getNutrientValue('vitamin-c', '_100g', '')), 3)} mg
                 </span>
               </div>
             ) : null}
@@ -263,7 +269,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item mineral">
                 <span className="label">Calcium</span>
                 <span className="value">
-                  {formatNutrient(getNutrientValue('calcium', '_100g', ''), 3)} mg
+                  {formatNutrient(gramsToMilligrams(getNutrientValue('calcium', '_100g', '')), 1)} mg
                 </span>
               </div>
             ) : null}
@@ -271,7 +277,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item mineral">
                 <span className="label">Iron</span>
                 <span className="value">
-                  {formatNutrient(getNutrientValue('iron', '_100g', ''), 3)} mg
+                  {formatNutrient(gramsToMilligrams(getNutrientValue('iron', '_100g', '')), 3)} mg
                 </span>
               </div>
             ) : null}
@@ -279,7 +285,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item mineral">
                 <span className="label">Potassium</span>
                 <span className="value">
-                  {formatNutrient(getNutrientValue('potassium', '_100g', ''), 3)} mg
+                  {formatNutrient(gramsToMilligrams(getNutrientValue('potassium', '_100g', '')), 1)} mg
                 </span>
               </div>
             ) : null}
