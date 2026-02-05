@@ -679,3 +679,111 @@
 .no-conditions-warning strong {
   color: #FFFFE0;
 }
+
+/* Nutrition Header with Grade */
+.nutrition-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.nutrition-grade {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.nutrition-grade.grade-a {
+  background: linear-gradient(135deg, #2d5016 0%, #38ef7d 100%);
+  color: white;
+}
+
+.nutrition-grade.grade-b {
+  background: linear-gradient(135deg, #85c226 0%, #b8e986 100%);
+  color: #1a1a1a;
+}
+
+.nutrition-grade.grade-c {
+  background: linear-gradient(135deg, #f5d020 0%, #f5e960 100%);
+  color: #1a1a1a;
+}
+
+.nutrition-grade.grade-d {
+  background: linear-gradient(135deg, #ee8a17 0%, #f5a742 100%);
+  color: white;
+}
+
+.nutrition-grade.grade-e {
+  background: linear-gradient(135deg, #e63946 0%, #f07178 100%);
+  color: white;
+}
+
+/* Serving Toggle Section */
+.serving-toggle-section {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.serving-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.serving-label {
+  font-size: 1rem;
+  color: #888;
+  font-weight: 600;
+}
+
+.toggle-serving-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.toggle-serving-button:hover {
+  opacity: 0.85;
+}
+
+/* Vitamin and Mineral Styling */
+.nutrition-item.vitamin {
+  border-left: 3px solid #ff9800;
+}
+
+.nutrition-item.mineral {
+  border-left: 3px solid #2196f3;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .nutrition-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .serving-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .toggle-serving-button {
+    width: 100%;
+  }
+}

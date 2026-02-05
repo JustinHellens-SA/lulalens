@@ -6,6 +6,7 @@ function ProductInfo({ product, onScanAgain }) {
   const [productData, setProductData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showPerServing, setShowPerServing] = useState(false)
 
   useEffect(() => {
     const loadProductData = async () => {
@@ -56,6 +57,29 @@ function ProductInfo({ product, onScanAgain }) {
   console.log('Product data:', prod)
   console.log('Nutriments:', prod.nutriments)
 
+  // Helper function to get nutrient value (per 100g or per serving)
+  const getNutrientValue = (nutrient, suffix = '_100g', fallbackSuffix = '') => {
+    if (!prod.nutriments) return null
+    
+    if (showPerServing && prod.serving_quantity) {
+      const per100g = prod.nutriments[`${nutrient}${suffix}`] ?? prod.nutriments[`${nutrient}${fallbackSuffix}`]
+      if (per100g != null) {
+        return (per100g * prod.serving_quantity / 100).toFixed(1)
+      }
+    }
+    
+    return prod.nutriments[`${nutrient}${suffix}`] ?? prod.nutriments[`${nutrient}${fallbackSuffix}`]
+  }
+
+  // Helper function to format nutrient display
+  const formatNutrient = (value, decimals = 1) => {
+    if (value == null) return null
+    return Number(value).toFixed(decimals)
+  }
+
+  // Check if serving size data is available
+  const hasServingData = prod.serving_size || prod.serving_quantity
+
   return (
     <div className="product-info">
       <div className="product-header">
@@ -72,13 +96,41 @@ function ProductInfo({ product, onScanAgain }) {
       {/* Nutrition Facts */}
       {prod.nutriments && Object.keys(prod.nutriments).length > 0 ? (
         <div className="nutrition-section">
-          <h3>📊 Nutrition Facts (per 100g)</h3>
+          <div className="nutrition-header">
+            <h3>📊 Nutrition Facts</h3>
+            {prod.nutrition_grades && (
+              <div className={`nutrition-grade grade-${prod.nutrition_grades.toLowerCase()}`}>
+                Nutri-Score: {prod.nutrition_grades.toUpperCase()}
+              </div>
+            )}
+          </div>
+          
+          <div className="serving-toggle-section">
+            <div className="serving-info">
+              <span className="serving-label">
+                {showPerServing 
+                  ? `Per Serving${prod.serving_size ? ` (${prod.serving_size})` : ''}`
+                  : 'Per 100g'
+                }
+              </span>
+              {hasServingData && (
+                <button 
+                  className="toggle-serving-button"
+                  onClick={() => setShowPerServing(!showPerServing)}
+                >
+                  Switch to {showPerServing ? 'per 100g' : 'per serving'}
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="nutrition-grid">
+            {/* Energy Section */}
             {(prod.nutriments.energy_100g || prod.nutriments['energy-kj_100g'] || prod.nutriments.energy) ? (
               <div className="nutrition-item">
                 <span className="label">Energy</span>
                 <span className="value">
-                  {Math.round(prod.nutriments.energy_100g || prod.nutriments['energy-kj_100g'] || prod.nutriments.energy || 0)} kJ
+                  {Math.round(getNutrientValue('energy', '_100g', '') || getNutrientValue('energy-kj', '_100g', '') || 0)} kJ
                 </span>
               </div>
             ) : null}
@@ -86,63 +138,95 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item">
                 <span className="label">Calories</span>
                 <span className="value">
-                  {Math.round(prod.nutriments['energy-kcal_100g'] || prod.nutriments['energy-kcal'] || 0)} kcal
+                  {Math.round(getNutrientValue('energy-kcal', '_100g', '') || 0)} kcal
                 </span>
               </div>
             ) : null}
+
+            {/* Fats Section */}
             {(prod.nutriments.fat_100g != null || prod.nutriments.fat != null) ? (
+              <>
+                <div className="nutrition-item">
+                  <span className="label">Fat</span>
+                  <span className="value">
+                    {formatNutrient(getNutrientValue('fat', '_100g', ''))} g
+                  </span>
+                </div>
+                {(prod.nutriments['saturated-fat_100g'] != null || prod.nutriments['saturated-fat'] != null) ? (
+                  <div className="nutrition-item sub">
+                    <span className="label">Saturated Fat</span>
+                    <span className="value">
+                      {formatNutrient(getNutrientValue('saturated-fat', '_100g', ''))} g
+                    </span>
+                  </div>
+                ) : null}
+                {(prod.nutriments['trans-fat_100g'] != null || prod.nutriments['trans-fat'] != null) ? (
+                  <div className="nutrition-item sub">
+                    <span className="label">Trans Fat</span>
+                    <span className="value">
+                      {formatNutrient(getNutrientValue('trans-fat', '_100g', ''))} g
+                    </span>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
+            {/* Cholesterol */}
+            {(prod.nutriments.cholesterol_100g != null || prod.nutriments.cholesterol != null) ? (
               <div className="nutrition-item">
-                <span className="label">Fat</span>
+                <span className="label">Cholesterol</span>
                 <span className="value">
-                  {Number(prod.nutriments.fat_100g ?? prod.nutriments.fat ?? 0).toFixed(1)} g
+                  {formatNutrient(getNutrientValue('cholesterol', '_100g', ''), 3)} mg
                 </span>
               </div>
             ) : null}
-            {(prod.nutriments['saturated-fat_100g'] != null || prod.nutriments['saturated-fat'] != null) ? (
-              <div className="nutrition-item sub">
-                <span className="label">Saturated Fat</span>
-                <span className="value">
-                  {Number(prod.nutriments['saturated-fat_100g'] ?? prod.nutriments['saturated-fat'] ?? 0).toFixed(1)} g
-                </span>
-              </div>
-            ) : null}
+
+            {/* Carbohydrates Section */}
             {(prod.nutriments.carbohydrates_100g != null || prod.nutriments.carbohydrates != null) ? (
-              <div className="nutrition-item">
-                <span className="label">Carbohydrates</span>
-                <span className="value">
-                  {Number(prod.nutriments.carbohydrates_100g ?? prod.nutriments.carbohydrates ?? 0).toFixed(1)} g
-                </span>
-              </div>
+              <>
+                <div className="nutrition-item">
+                  <span className="label">Carbohydrates</span>
+                  <span className="value">
+                    {formatNutrient(getNutrientValue('carbohydrates', '_100g', ''))} g
+                  </span>
+                </div>
+                {(prod.nutriments.sugars_100g != null || prod.nutriments.sugars != null) ? (
+                  <div className="nutrition-item sub">
+                    <span className="label">Sugars</span>
+                    <span className="value">
+                      {formatNutrient(getNutrientValue('sugars', '_100g', ''))} g
+                    </span>
+                  </div>
+                ) : null}
+              </>
             ) : null}
-            {(prod.nutriments.sugars_100g != null || prod.nutriments.sugars != null) ? (
-              <div className="nutrition-item sub">
-                <span className="label">Sugars</span>
-                <span className="value">
-                  {Number(prod.nutriments.sugars_100g ?? prod.nutriments.sugars ?? 0).toFixed(1)} g
-                </span>
-              </div>
-            ) : null}
+
+            {/* Fiber */}
             {(prod.nutriments.fiber_100g != null || prod.nutriments.fiber != null) ? (
               <div className="nutrition-item">
                 <span className="label">Fiber</span>
                 <span className="value">
-                  {Number(prod.nutriments.fiber_100g ?? prod.nutriments.fiber ?? 0).toFixed(1)} g
+                  {formatNutrient(getNutrientValue('fiber', '_100g', ''))} g
                 </span>
               </div>
             ) : null}
+
+            {/* Protein */}
             {(prod.nutriments.proteins_100g != null || prod.nutriments.proteins != null) ? (
               <div className="nutrition-item">
                 <span className="label">Protein</span>
                 <span className="value">
-                  {Number(prod.nutriments.proteins_100g ?? prod.nutriments.proteins ?? 0).toFixed(1)} g
+                  {formatNutrient(getNutrientValue('proteins', '_100g', ''))} g
                 </span>
               </div>
             ) : null}
+
+            {/* Salt and Sodium */}
             {(prod.nutriments.salt_100g != null || prod.nutriments.salt != null) ? (
               <div className="nutrition-item">
                 <span className="label">Salt</span>
                 <span className="value">
-                  {Number(prod.nutriments.salt_100g ?? prod.nutriments.salt ?? 0).toFixed(1)} g
+                  {formatNutrient(getNutrientValue('salt', '_100g', ''))} g
                 </span>
               </div>
             ) : null}
@@ -150,7 +234,51 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item sub">
                 <span className="label">Sodium</span>
                 <span className="value">
-                  {Number(prod.nutriments.sodium_100g ?? prod.nutriments.sodium ?? 0).toFixed(3)} g
+                  {formatNutrient(getNutrientValue('sodium', '_100g', ''), 3)} g
+                </span>
+              </div>
+            ) : null}
+
+            {/* Vitamins Section */}
+            {(prod.nutriments['vitamin-a_100g'] != null || prod.nutriments['vitamin-a'] != null) ? (
+              <div className="nutrition-item vitamin">
+                <span className="label">Vitamin A</span>
+                <span className="value">
+                  {formatNutrient(getNutrientValue('vitamin-a', '_100g', ''), 3)} mg
+                </span>
+              </div>
+            ) : null}
+            {(prod.nutriments['vitamin-c_100g'] != null || prod.nutriments['vitamin-c'] != null) ? (
+              <div className="nutrition-item vitamin">
+                <span className="label">Vitamin C</span>
+                <span className="value">
+                  {formatNutrient(getNutrientValue('vitamin-c', '_100g', ''), 3)} mg
+                </span>
+              </div>
+            ) : null}
+
+            {/* Minerals Section */}
+            {(prod.nutriments.calcium_100g != null || prod.nutriments.calcium != null) ? (
+              <div className="nutrition-item mineral">
+                <span className="label">Calcium</span>
+                <span className="value">
+                  {formatNutrient(getNutrientValue('calcium', '_100g', ''), 3)} mg
+                </span>
+              </div>
+            ) : null}
+            {(prod.nutriments.iron_100g != null || prod.nutriments.iron != null) ? (
+              <div className="nutrition-item mineral">
+                <span className="label">Iron</span>
+                <span className="value">
+                  {formatNutrient(getNutrientValue('iron', '_100g', ''), 3)} mg
+                </span>
+              </div>
+            ) : null}
+            {(prod.nutriments.potassium_100g != null || prod.nutriments.potassium != null) ? (
+              <div className="nutrition-item mineral">
+                <span className="label">Potassium</span>
+                <span className="value">
+                  {formatNutrient(getNutrientValue('potassium', '_100g', ''), 3)} mg
                 </span>
               </div>
             ) : null}
