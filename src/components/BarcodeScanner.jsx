@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import PropTypes from 'prop-types'
 import Quagga from '@ericblade/quagga2'
+import { validateBarcode } from '../utils/barcodeValidator'
 import './BarcodeScanner.css'
 
 function BarcodeScanner({ onScanSuccess, onCancel }) {
   const [error, setError] = useState(null)
   const [status, setStatus] = useState('Initializing...')
   const [manualBarcode, setManualBarcode] = useState('')
+  const [validationError, setValidationError] = useState(null)
   const [scannerType, setScannerType] = useState(null)
   const videoRef = useRef(null)
   const streamRef = useRef(null)
@@ -13,17 +16,16 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
   const scanningRef = useRef(true)
   const detectedCodesRef = useRef({})
   const scannerRef = useRef(null)
+  const debounceTimerRef = useRef(null)
 
   useEffect(() => {
     const initScanner = async () => {
       // Check if native Barcode Detection API is supported (Android Chrome/Edge)
       if ('BarcodeDetector' in window) {
-        console.log('✨ Using native Barcode Detection API (fast & small)')
         setScannerType('native')
         initNativeScanner()
       } else {
         // Fallback to Quagga2 for iOS/Safari
-        console.log('📱 Using Quagga2 fallback for iOS/Safari')
         setScannerType('quagga')
         initQuaggaScanner()
       }
@@ -80,11 +82,9 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
           }
           detectedCodesRef.current[code]++
           
-          console.log(`Detected: ${code} (${detectedCodesRef.current[code]}/2)`)
           setStatus(`📍 Found: ${code} (${detectedCodesRef.current[code]}/2)`)
           
           if (detectedCodesRef.current[code] >= 2) {
-            console.log('✅ Barcode confirmed:', code)
             setStatus(`✅ CONFIRMED: ${code}`)
             scanningRef.current = false
             
@@ -150,11 +150,9 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
         }
         detectedCodesRef.current[code]++
         
-        console.log(`Detected: ${code} (${detectedCodesRef.current[code]}/2)`)
         setStatus(`📍 Found: ${code} (${detectedCodesRef.current[code]}/2)`)
         
         if (detectedCodesRef.current[code] >= 2) {
-          console.log('✅ Barcode confirmed:', code)
           setStatus(`✅ CONFIRMED: ${code}`)
           Quagga.stop()
           
@@ -203,15 +201,63 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
 
   const handleManualSubmit = (e) => {
     e.preventDefault()
-    if (manualBarcode.trim()) {
-      scanningRef.current = false
-      Quagga.stop()
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop())
-      }
-      onScanSuccess(manualBarcode.trim())
+    const barcode = manualBarcode.trim()
+    
+    if (!barcode) {
+      setValidationError('Please enter a barcode')
+      return
     }
+
+    // Validate barcode format
+    const validation = validateBarcode(barcode)
+    if (!validation.isValid) {
+      setValidationError(validation.message)
+      return
+    }
+
+    setValidationError(null)
+    scanningRef.current = false
+    Quagga.stop()
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+    }
+    onScanSuccess(barcode)
   }
+
+  // Debounced validation for manual input
+  const handleManualInput = (value) => {
+    setManualBarcode(value)
+    
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    // Clear validation error immediately if input is empty
+    if (!value.trim()) {
+      setValidationError(null)
+      return
+    }
+
+    // Debounce validation by 500ms
+    debounceTimerRef.current = setTimeout(() => {
+      const validation = validateBarcode(value.trim())
+      if (!validation.isValid) {
+        setValidationError(validation.message)
+      } else {
+        setValidationError(null)
+      }
+    }, 500)
+  }
+
+  // Cleanup debounce timer
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
 
   return (
     <div className="barcode-scanner">
@@ -290,7 +336,11 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
       </div>
 
       <div className="scanner-actions">
-        <button onClick={handleCancel} className="cancel-button">
+        <button 
+          onClick={handleCancel} 
+          className="cancel-button"
+          aria-label="Cancel scanning"
+        >
           Cancel
         </button>
       </div>
@@ -301,15 +351,36 @@ function BarcodeScanner({ onScanSuccess, onCancel }) {
           <input
             type="text"
             value={manualBarcode}
-            onChange={(e) => setManualBarcode(e.target.value)}
+            onChange={(e) => handleManualInput(e.target.value)}
             placeholder="Enter barcode number"
             inputMode="numeric"
+            aria-label="Manual barcode entry"
+            aria-describedby="validation-error"
           />
-          <button type="submit">Submit</button>
+          {validationError && (
+            <div 
+              id="validation-error" 
+              className="validation-error"
+              role="alert"
+            >
+              {validationError}
+            </div>
+          )}
+          <button 
+            type="submit"
+            aria-label="Submit barcode"
+          >
+            Submit
+          </button>
         </form>
       </div>
     </div>
   )
+}
+
+BarcodeScanner.propTypes = {
+  onScanSuccess: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired
 }
 
 export default BarcodeScanner

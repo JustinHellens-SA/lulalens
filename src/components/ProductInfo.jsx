@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { fetchProductByBarcode } from '../services/openFoodFactsApi'
+import PropTypes from 'prop-types'
+import { fetchProductByBarcode, APIError } from '../services/openFoodFactsApi'
+import LoadingSkeleton from './LoadingSkeleton'
 import './ProductInfo.css'
 
 function ProductInfo({ product, onScanAgain }) {
@@ -18,8 +20,28 @@ function ProductInfo({ product, onScanAgain }) {
         setProductData(data)
         setLoading(false)
       } catch (err) {
-        console.error('Error loading product:', err)
-        setError('Unable to find product information')
+        let errorMessage = 'Unable to find product information'
+        
+        if (err instanceof APIError) {
+          switch (err.code) {
+            case 'OFFLINE':
+              errorMessage = 'No internet connection. Please check your network and try again.'
+              break
+            case 'NOT_FOUND':
+              errorMessage = 'Product not found in database. Try another barcode.'
+              break
+            case 'TIMEOUT':
+              errorMessage = 'Request timed out. Please try again.'
+              break
+            case 'SERVER_ERROR':
+              errorMessage = 'Server error. Please try again later.'
+              break
+            default:
+              errorMessage = err.message
+          }
+        }
+        
+        setError(errorMessage)
         setLoading(false)
       }
     }
@@ -27,13 +49,22 @@ function ProductInfo({ product, onScanAgain }) {
     loadProductData()
   }, [product.barcode])
 
+  // Keyboard navigation support
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'Escape') {
+        onScanAgain()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [onScanAgain])
+
   if (loading) {
     return (
       <div className="product-info">
-        <div className="loading">
-          <p>Loading product information...</p>
-          <div className="spinner"></div>
-        </div>
+        <LoadingSkeleton type="product" />
       </div>
     )
   }
@@ -45,17 +76,18 @@ function ProductInfo({ product, onScanAgain }) {
           <h2>Product Not Found</h2>
           <p>Barcode: {product.barcode}</p>
           <p>{error || 'This product is not in the database yet.'}</p>
-          <button onClick={onScanAgain}>Scan Another Product</button>
+          <button 
+            onClick={onScanAgain}
+            aria-label="Scan another product"
+          >
+            Scan Another Product
+          </button>
         </div>
       </div>
     )
   }
 
   const prod = productData.product
-  
-  // Debug log to see what data we have
-  console.log('Product data:', prod)
-  console.log('Nutriments:', prod.nutriments)
 
   // Helper function to get nutrient value (per 100g or per serving)
   // Note: Per-serving calculation assumes serving_quantity is in grams
@@ -79,20 +111,32 @@ function ProductInfo({ product, onScanAgain }) {
     return Number(value).toFixed(decimals)
   }
 
-  // Helper function to convert grams to milligrams (for future use if needed)
-  const gramsToMilligrams = (value) => {
-    if (value == null) return null
-    return value * 1000
-  }
-
   // Check if serving size data is available
   const hasServingData = prod.serving_size || prod.serving_quantity
 
   return (
     <div className="product-info">
+      <div className="back-button-section">
+        <button 
+          onClick={onScanAgain} 
+          className="back-button"
+          aria-label="Go back to scanner"
+        >
+          ← Back
+        </button>
+        <span className="keyboard-hint">
+          Press <kbd>ESC</kbd> to go back
+        </span>
+      </div>
+
       <div className="product-header">
         {prod.image_url && (
-          <img src={prod.image_url} alt={prod.product_name} className="product-image" />
+          <img 
+            src={prod.image_url} 
+            alt={prod.product_name || 'Product image'} 
+            className="product-image"
+            loading="lazy"
+          />
         )}
         <div className="product-title">
           <h2>{prod.product_name || 'Unknown Product'}</h2>
@@ -125,6 +169,7 @@ function ProductInfo({ product, onScanAgain }) {
                 <button 
                   className="toggle-serving-button"
                   onClick={() => setShowPerServing(!showPerServing)}
+                  aria-label={`Switch to ${showPerServing ? 'per 100g' : 'per serving'} view`}
                 >
                   Switch to {showPerServing ? 'per 100g' : 'per serving'}
                 </button>
@@ -342,12 +387,23 @@ function ProductInfo({ product, onScanAgain }) {
       </div>
 
       <div className="scan-again-section">
-        <button onClick={onScanAgain} className="scan-again-button">
+        <button 
+          onClick={onScanAgain} 
+          className="scan-again-button"
+          aria-label="Scan another product"
+        >
           Scan Another Product
         </button>
       </div>
     </div>
   )
+}
+
+ProductInfo.propTypes = {
+  product: PropTypes.shape({
+    barcode: PropTypes.string.isRequired
+  }).isRequired,
+  onScanAgain: PropTypes.func.isRequired
 }
 
 export default ProductInfo
