@@ -61,14 +61,15 @@ function ProductInfo({ product, onScanAgain }) {
   const getNutrientValue = (nutrient, suffix = '_100g', fallbackSuffix = '') => {
     if (!prod.nutriments) return null
     
+    const per100g = prod.nutriments[`${nutrient}${suffix}`] ?? prod.nutriments[`${nutrient}${fallbackSuffix}`]
+    
+    if (per100g == null) return null
+    
     if (showPerServing && prod.serving_quantity) {
-      const per100g = prod.nutriments[`${nutrient}${suffix}`] ?? prod.nutriments[`${nutrient}${fallbackSuffix}`]
-      if (per100g != null) {
-        return (per100g * prod.serving_quantity / 100).toFixed(1)
-      }
+      return per100g * prod.serving_quantity / 100
     }
     
-    return prod.nutriments[`${nutrient}${suffix}`] ?? prod.nutriments[`${nutrient}${fallbackSuffix}`]
+    return per100g
   }
 
   // Helper function to format nutrient display
@@ -176,7 +177,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item">
                 <span className="label">Cholesterol</span>
                 <span className="value">
-                  {formatNutrient(getNutrientValue('cholesterol', '_100g', ''), 3)} mg
+                  {formatNutrient(getNutrientValue('cholesterol', '_100g', ''), 1)} mg
                 </span>
               </div>
             ) : null}
