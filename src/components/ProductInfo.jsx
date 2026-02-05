@@ -251,7 +251,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item vitamin">
                 <span className="label">Vitamin A</span>
                 <span className="value">
-                  {formatNutrient(gramsToMilligrams(getNutrientValue('vitamin-a', '_100g', '')), 3)} mg
+                  {formatNutrient(gramsToMilligrams(getNutrientValue('vitamin-a', '_100g', '')), 1)} mg
                 </span>
               </div>
             ) : null}
@@ -259,7 +259,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item vitamin">
                 <span className="label">Vitamin C</span>
                 <span className="value">
-                  {formatNutrient(gramsToMilligrams(getNutrientValue('vitamin-c', '_100g', '')), 3)} mg
+                  {formatNutrient(gramsToMilligrams(getNutrientValue('vitamin-c', '_100g', '')), 1)} mg
                 </span>
               </div>
             ) : null}
@@ -277,7 +277,7 @@ function ProductInfo({ product, onScanAgain }) {
               <div className="nutrition-item mineral">
                 <span className="label">Iron</span>
                 <span className="value">
-                  {formatNutrient(gramsToMilligrams(getNutrientValue('iron', '_100g', '')), 3)} mg
+                  {formatNutrient(gramsToMilligrams(getNutrientValue('iron', '_100g', '')), 1)} mg
                 </span>
               </div>
             ) : null}
